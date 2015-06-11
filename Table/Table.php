@@ -10,30 +10,30 @@ class Table {
 	 * @var PDO
 	 */
 	public static $__pdo = null;			// 默认PDO对象
-	public static $__host = '127.0.0.1';	// 默认主机
-	public static $__user = 'root';			// 默认账户
-	public static $__password = '123456';	// 默认密码
-	public static $__dbname = 'test';		// 默认数据库名称
-	public static $__charset = 'utf8';		// 默认字符集
+	public static $__host = "127.0.0.1";	// 默认主机
+	public static $__user = "root";			// 默认账户
+	public static $__password = "123456";	// 默认密码
+	public static $__dbname = "test";		// 默认数据库名称
+	public static $__charset = "utf8";		// 默认字符集
 
 	/**
 	 * @var PDO
 	 */
 	public $_pdo = null;					// PDO对象
 	public $_table = null;					// table
-	public $_pk = 'id';						// paramry
+	public $_pk = "id";						// paramry
 	public $_where = array();				// where
 	public $_where_params = array();		// where params
 	public $_count_where = array();			// count where
 	public $_count_where_params = array();	// count where params
-	public $_group = '';					// group
+	public $_group = "";					// group
 	public $_having = array();				// having
 	public $_having_params = array();		// having params
 	public $_order = null;					// order
 	public $_limit = null;					// limit
 	public $_offset = null;					// offset
-	public $_for_update = '';				// read lock
-	public $_lock_in_share_model = '';		// write lock
+	public $_for_update = "";				// read lock
+	public $_lock_in_share_model = "";		// write lock
 
 	/**
 	 * Table Construct
@@ -95,25 +95,25 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function queryParams($sql, array $params) {
-		$sqls = explode('?', $sql);
+		$sqls = explode("?", $sql);
 		$sql_new = array_shift($sqls);
 		$params_new = array();
 		foreach ($sqls as $i => $sql_item) {
 			if (is_array($params[$i])) {
-				$sql_new .= str_repeat('?,', count($params[$i])-1).'?'.$sql_item;
+				$sql_new .= str_repeat("?,", count($params[$i])-1)."?".$sql_item;
 				$params_new = array_merge($params_new, $params[$i]);
 			} else {
-				$sql_new .= '?'.$sql_item;
+				$sql_new .= "?".$sql_item;
 				$params_new[] = $params[$i];
 			}
 		}
 		$stmt = $this->getPDO()->prepare($sql_new);
 		foreach ($params_new as $i => $param) {
 			switch (gettype($param)) {
-				case 'integer':
+				case "integer":
 					$stmt->bindValue($i+1, $param, PDO::PARAM_INT);
 					break;
-				case 'NULL':
+				case "NULL":
 					$stmt->bindValue($i+1, $param, PDO::PARAM_NULL);
 					break;
 				default :
@@ -131,18 +131,18 @@ class Table {
 	 * @param string $field
 	 * @return PDOStatement
 	 */
-	public function select($columns='*') {
+	public function select($columns="*") {
 		$params = array_merge($this->_where_params, $this->_having_params);
 		$sql = "SELECT $columns FROM `{$this->_table}`";
-		$sql .= empty($this->_where) ? '' : ' WHERE '. implode(' AND ', $this->_where);
-		$sql .= empty($this->_group) ? '' : ' GROUP BY '. $this->_group;
-		$sql .= empty($this->_having) ? '' : ' HAVING '. implode(' AND ', $this->_having);
-		$sql .= empty($this->_order) ? '' : ' ORDER BY '. $this->_order;
+		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
+		$sql .= empty($this->_group) ? "" : " GROUP BY ". $this->_group;
+		$sql .= empty($this->_having) ? "" : " HAVING ". implode(" AND ", $this->_having);
+		$sql .= empty($this->_order) ? "" : " ORDER BY ". $this->_order;
 		if (isset($this->_limit)) {
-			$sql .= ' LIMIT ?';
+			$sql .= " LIMIT ?";
 			$params[] = $this->_limit;
 			if (isset($this->_offset)) {
-				$sql .= ' OFFSET ?';
+				$sql .= " OFFSET ?";
 				$params[] = $this->_offset;
 			}
 		}
@@ -166,7 +166,7 @@ class Table {
 			$sql .= " `$col` = ?,";
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = ' ';
+		$sql{strlen($sql)-1} = " ";
 		return $this->queryParams($sql, $params);
 	}
 	
@@ -179,19 +179,19 @@ class Table {
 	 */
 	public function batchInsert(array $fields, array $rows, $batch=1000) {
 		$i = 0;
-		$sql = "INSERT `{$this->_table}` (`".implode('`, `', $fields)."`) VALUES ";
+		$sql = "INSERT `{$this->_table}` (`".implode("`, `", $fields)."`) VALUES ";
 		foreach ($rows as $row) {
 			$i++;
-			$sql .= "('".implode("','", array_map('addslashes', $row))."'),";
+			$sql .= "('".implode("','", array_map("addslashes", $row))."'),";
 			if ($i >= $batch) {
-				$sql{strlen($sql)-1} = ' ';
+				$sql{strlen($sql)-1} = " ";
 				$this->query($sql);
 				$i = 0;
-				$sql = "INSERT `{$this->_table}` (`".implode('`, `', $fields)."`) VALUES ";
+				$sql = "INSERT `{$this->_table}` (`".implode("`, `", $fields)."`) VALUES ";
 			}
 		}
 		if ($i > 0) {
-			$sql{strlen($sql)-1} = ' ';
+			$sql{strlen($sql)-1} = " ";
 			$this->query($sql);
 		}
 		return $this;
@@ -209,8 +209,8 @@ class Table {
 			$sql .= " `$col` = ?,";
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = ' ';
-		$sql .= empty($this->_where) ? '' : 'WHERE '. implode(' AND ', $this->_where);
+		$sql{strlen($sql)-1} = " ";
+		$sql .= empty($this->_where) ? "" : "WHERE ". implode(" AND ", $this->_where);
 		$params = array_merge($params, $this->_where_params);
 		return $this->queryParams($sql, $params);
 	}
@@ -227,8 +227,8 @@ class Table {
 			$sql .= " `$col` = ?,";
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = ' ';
-		$sql .= empty($this->_where) ? '' : 'WHERE '. implode(' AND ', $this->_where);
+		$sql{strlen($sql)-1} = " ";
+		$sql .= empty($this->_where) ? "" : "WHERE ". implode(" AND ", $this->_where);
 		$params = array_merge($params, $this->_where_params);
 		return $this->queryParams($sql, $params);
 	}
@@ -239,7 +239,7 @@ class Table {
 	 */
 	public function delete() {
 		$sql = "DELETE FROM `{$this->_table}`";
-		$sql .= empty($this->_where) ? '' : ' WHERE '. implode(' AND ', $this->_where);
+		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
 		return $this->queryParams($sql, $this->_where_params);
 	}
 
@@ -256,8 +256,8 @@ class Table {
 		$this->_order = null;
 		$this->_limit = null;
 		$this->_offset = null;
-		$this->_for_update = '';
-		$this->_lock_in_share_model = '';
+		$this->_for_update = "";
+		$this->_lock_in_share_model = "";
 		return $this;
 	}
 
@@ -324,7 +324,7 @@ class Table {
 	 * @return Table
 	 */
 	public function forUpdate() {
-		$this->forUpdate = ' FOR UPDATE';
+		$this->forUpdate = " FOR UPDATE";
 		return $this;
 	}
 
@@ -333,7 +333,7 @@ class Table {
 	 * @return Table
 	 */
 	public function lockInShareMode() {
-		$this->_lock_in_share_model = ' LOCK IN SHARE MODE';
+		$this->_lock_in_share_model = " LOCK IN SHARE MODE";
 		return $this;
 	}
 
@@ -387,7 +387,7 @@ class Table {
 	 */
 	public function count() {
 		$sql = "SELECT count(*) FROM `{$this->_table}`";
-		$sql .= empty($this->_count_where) ? '' : ' WHERE '. implode(' AND ', $this->_count_where);
+		$sql .= empty($this->_count_where) ? "" : " WHERE ". implode(" AND ", $this->_count_where);
 		return $this->queryParams($sql, $this->_count_where_params)->fetchColumn();
 	}
 
@@ -405,8 +405,8 @@ class Table {
 			$val = array_shift($args);
 			$sets[] = "`$col` = `$col` + $val";
 		}
-		$sql = "UPDATE `{$this->_table}` SET ".implode(', ', $sets);
-		$sql .= empty($this->_where) ? '' : ' WHERE '. implode(' AND ', $this->_where);
+		$sql = "UPDATE `{$this->_table}` SET ".implode(", ", $sets);
+		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
 		$params = array_merge(array($val), $this->_where_params);
 		$this->queryParams($sql, $params);
 		return $this;
@@ -420,7 +420,7 @@ class Table {
 	 */
 	public function incr($col, $val = 1) {
 		$sql = "UPDATE `{$this->_table}` SET `$col` =  last_insert_id(`$col` + ?)";
-		$sql .= empty($this->_where) ? '' : ' WHERE '. implode(' AND ', $this->_where);
+		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
 		$params = array_merge(array($val), $this->_where_params);
 		$this->queryParams($sql, $params);
 		return $this->getPDO()->lastInsertId();
@@ -457,7 +457,7 @@ class Table {
 	 * @param string $field
 	 * @return PDOStatement
 	 */
-	public function foreignKey(array $rows, $foreign_key, $field='*') {
+	public function foreignKey(array $rows, $foreign_key, $field="*") {
 		$ids = array_column($rows, $foreign_key);
 		if (empty($ids)) {
 			return new PDOStatement();
