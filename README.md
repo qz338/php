@@ -1,2 +1,3 @@
-# php
-PHP library
+# PHP library
+
+	Table		Database Table class
