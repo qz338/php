@@ -20,6 +20,15 @@ function formData($namelist) {
 }
 
 /**
+ * 跳转到指定url
+ * @param string $url
+ */
+function redirect($url) {
+	header("Location: $url");
+	exit();
+}
+
+/**
  * 获得ip地址
  * @return number
  */
