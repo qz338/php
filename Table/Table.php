@@ -1,9 +1,8 @@
 <?php
 /**
- * Table
+ * Table class
  * @author dotcoo zhao <dotcoo@163.com>
  * @link http://www.dotcoo.com/table
- * @update 2014-10-29 13:30
  */
 class Table {
 	/**
@@ -432,6 +431,9 @@ class Table {
 	 * @return array
 	 */
 	public function find($id) {
+		if (empty($id)) {
+			$id = $_REQUEST[$this->_pk];
+		}
 		return $this->where("`{$this->_pk}` = ?", $id)->select()->fetch();
 	}
 

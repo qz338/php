@@ -1,5 +1,11 @@
 <?php
 /**
+ * Functions
+ * @author dotcoo zhao <dotcoo@163.com>
+ * @link https://www.dotcoo.com/functions
+ */
+
+/**
  * 是否post提交
  */
 function isPost() {
