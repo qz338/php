@@ -15,8 +15,8 @@ class Template {
 	}
 
 	public function parse ($text) {
-		// $text = preg_replace('/^\s*/m', 						"",													$text);
-		// $text = preg_replace('/\s*$/m', 						"",													$text);
+		// $text = preg_replace('/^\s+/m', 						"",													$text);
+		// $text = preg_replace('/\s+$/m', 						"",													$text);
 		// $text = preg_replace("/\r+/", 						"",													$text);
 		// $text = preg_replace("/\n+/", 						"",													$text);
 		$text = preg_replace("/\\\\/", 							"\\\\",												$text);
