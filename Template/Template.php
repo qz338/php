@@ -47,7 +47,7 @@ class Template {
 	public function build($source, $target) {
 		$text = file_get_contents($source);
 
-		$prefix = "<?php\n\$data = \$vars;\n?>\n";
+		$prefix = "";
 		$suffix = "";
 		$text = $prefix . $this->parse($text) . $suffix;
 
@@ -69,6 +69,7 @@ class Template {
 		if (!file_exists($filename)) {
 			return 'template ' + name + ' not found!';
 		}
+		$data = $vars;
 		require $filename;
 	}
 }
