@@ -48,7 +48,7 @@ function ip(){
  * @param number $i 多文件上传时的索引
  * @return bool
  */
-function isUpload($name, $index=null){
+function isUpload($name, $index = null){
 	if (!(isset($_SERVER["HTTP_CONTENT_TYPE"]) && strpos($_SERVER["HTTP_CONTENT_TYPE"], "multipart/form-data")===0)) {
 		exit('Upload: form error!<br />enctype="multipart/form-data"');
 	}
@@ -97,8 +97,8 @@ function random($len) {
  * 计算当前天数
  * @return number
  */
-function today() {
-	return (int) (($_SERVER["REQUEST_TIME"] + 28800) / 86400);
+function today($offset = 28800) {
+	return (int) (($_SERVER["REQUEST_TIME"] + $offset) / 86400);
 }
 
 /**
@@ -109,7 +109,7 @@ function today() {
  * @param string $pkey
  * @return array
 */
-function rowsToTree($rows, $pid=0, $key="id", $pkey="pid") {
+function rowsToTree($rows, $pid = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
 		if($pid == $row[$pkey]) {	
@@ -129,7 +129,7 @@ function rowsToTree($rows, $pid=0, $key="id", $pkey="pid") {
  * @param string $pkey
  * @return array
  */
-function rowsToFloor($rows, $pid=0, $floor=0, $key="id", $pkey="pid") {
+function rowsToFloor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
 		if($pid == $row[$pkey]) {
