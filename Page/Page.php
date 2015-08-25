@@ -9,9 +9,18 @@ class Page {
 	public $page;						// 当前第几页
 	public $pagesize;					// 每页大小
 	public $last;						// 总共页数
-	public $prev_text = "&lt;上一页";	// 上一页
-	public $next_text = "下一页&gt;";	// 下一页
+
+	public $nodata_text = "暂无数据!";	// 暂无数据!
+	public $first_text = "首页";		// 首页
+	public $last_text = "尾页";			// 尾页
+	public $prev_text = "上一页";		// 上一页
+	public $next_text = "下一页";		// 下一页
+
 	public $half = 4;					// 平均显示数量
+	public $static = false;				// 是否静态页面
+	public $pIndex = 0;					// 静态分页索引
+	public $format = "";				// 静态格式化
+	public $params = array();			// 静态参数
 
 	/**
 	 * Page分页组件
@@ -21,8 +30,44 @@ class Page {
 	*/
 	function __construct($total, $page=1, $pagesize=15) {
 		$this->total = $total;
-		$this->page = isset($_GET["page"]) && is_numeric($_GET["page"]) ? intval($_GET["page"]) : $page;
+		// $this->page = isset($_GET["p"]) && is_numeric($_GET["p"]) ? intval($_GET["p"]) : $page;
+		$this->page = $page;
 		$this->pagesize = $pagesize;
+	}
+
+	/**
+	 * 静态分页
+	 * @param number $pIndex
+	 * @param string $format
+	 * @param number $param1
+	 * @return string
+	 */
+	public function setStatic($pIndex, $format) {
+		$this->static = true;
+		$this->pIndex = $pIndex;
+		$this->format = $format;
+		$params = func_get_args();
+		array_shift($params);
+		array_shift($params);
+		$this->params = $params;
+	}
+
+	/**
+	 * 超链接
+	 * @param number $p
+	 * @return string
+	 */
+	public function href($p) {
+		if ($this->static) {
+			$this->params[$this->pIndex-1] = $p;
+			return vsprintf($this->format, $this->params);
+		} else {
+			$urls = parse_url($_SERVER["REQUEST_URI"]);
+			$params = array();
+			parse_str(isset($urls["query"])?$urls["query"]:"", $params);
+			$params["p"] = $p;
+			return $urls["path"]."?".http_build_query($params);
+		}
 	}
 
 	/**
@@ -31,19 +76,8 @@ class Page {
 	 */
 	public function show($params = array()) {
 		if (empty($this->total)) {
-			return '<div class="pagebar">暂无数据!</div>';
+			return '<div class="pagebar">'.$this->nodata_text.'</div>';
 		}
-
-		$urls = parse_url($_SERVER["REQUEST_URI"]);
-		if (empty($params)) {
-			if (isset($urls["query"])) {
-				parse_str($urls["query"], $params);
-			}
-		}
-		if (isset($params)) {
-			unset($params["page"]);
-		}
-		$url = $urls["path"]."?".http_build_query($params).(empty($params)?"":"&");
 
 		$this->last = intval(($this->total+$this->pagesize-1)/$this->pagesize);
 		$this->page = $this->page < 1 || $this->page > $this->last ? 1 : $this->page;
@@ -59,37 +93,37 @@ class Page {
 			$end = $this->last;
 			$start = $end-$length > 1 ? $end-$length : 1;
 		}
-// 		echo "1, $start, $end, $this->last";
+
 		$html = '<div class="pagebar">';
 		
 		// 上一页
 		if ($this->page == 1) {
-			$html .= "<span>首页</span>";
-			$html .= "<span>上一页</span>";
+			$html .= empty($this->first_text)?'':'<span>'.$this->first_text.'</span>';
+			$html .= '<span>'.$this->prev_text.'</span>';
 		} else {
-			$html .= '<a href="'.$url.'page=1">首页</a>';
-			$html .= '<a href="'.$url.'page='.($this->page-1).'">上一页</a>';
+			$html .= empty($this->first_text)?'':'<a href="'.$this->href(1).'">'.$this->first_text.'</a>';
+			$html .= '<a href="'.$this->href($this->page-1).'">'.$this->prev_text.'</a>';
 		}
 		
 		// 页数
 		for ($i=$start; $i<=$end; $i++) {
 			if ($this->page == $i) {
-				$html .= "<span>".$i."</span>";
+				$html .= '<span>'.$i.'</span>';
 			} else {
-				$html .= '<a href="'.$url.'page='.$i.'">'.$i.'</a>';
+				$html .= '<a href="'.$this->href($i).'">'.$i.'</a>';
 			} 
 		}
 		
 		// 下一页
 		if ($this->page == $this->last) {
-			$html .= "<span>下一页</span>";
-			$html .= "<span>尾页</span>";
+			$html .= '<span>'.$this->next_text.'</span>';
+			$html .= empty($this->last_text)?'':'<span>'.$this->last_text.'</span>';
 		} else {
-			$html .= '<a href="'.$url.'page='.($this->page+1).'">下一页</a>';
-			$html .= '<a href="'.$url.'page='.$this->last.'">尾页</a>';
+			$html .= '<a href="'.$this->href($this->page+1).'">'.$this->next_text.'</a>';
+			$html .= empty($this->last_text)?'':'<a href="'.$this->href($this->last).'">'.$this->last_text.'</a>';
 		}
 		
-		$html .= "</div>";
+		$html .= '</div>';
 		return $html;
 	}
 	
