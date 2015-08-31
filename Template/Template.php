@@ -20,7 +20,7 @@ class Template {
 		// $text = preg_replace("/\r+/", 						"",													$text);
 		// $text = preg_replace("/\n+/", 						"",													$text);
 		$text = preg_replace("/\\\\/", 							"\\\\",												$text);
-		$text = preg_replace("/\'/", 							"\\'",												$text);
+		// $text = preg_replace("/\'/", 						"\\'",												$text);
 
 		$text = preg_replace('/{{\/\*(.+?)\*\/}}/', 			'', 												$text);
 		$text = preg_replace('/{{if \.(.+?)}}/', 				'<?php if (!empty($data["$1"])) { ?>', 				$text);
@@ -65,7 +65,7 @@ class Template {
 	}
 
 	public function render($name, $vars) {
-		$filename = $this->source . "/" . $name . ".php";
+		$filename = $this->target . "/" . $name . ".php";
 		if (!file_exists($filename)) {
 			return 'template ' + name + ' not found!';
 		}
