@@ -21,9 +21,10 @@ class Table {
 	public $_pdo = null;					// PDO对象
 	public $_table = null;					// table
 	public $_pk = "id";						// paramry
-	public $_keywords = array();			// keywords
 	public $_where = array();				// where
 	public $_where_params = array();		// where params
+	public $_count_where = array();			// count where
+	public $_count_where_params = array();	// count where params
 	public $_group = "";					// group
 	public $_having = array();				// having
 	public $_having_params = array();		// having params
@@ -63,7 +64,7 @@ class Table {
 		$options = array(
 				PDO::ATTR_PERSISTENT => true,
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
 		);
 		return self::$__pdo = new PDO($dsn, self::$__user, self::$__password, $options);
 	}
@@ -131,8 +132,7 @@ class Table {
 	 */
 	public function select($columns="*") {
 		$params = array_merge($this->_where_params, $this->_having_params);
-		$keywords = empty($this->_keywords) ? "" : " ".implode(" ", $this->_keywords);
-		$sql = "SELECT$keywords $columns FROM `{$this->_table}`";
+		$sql = "SELECT $columns FROM `{$this->_table}`";
 		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
 		$sql .= empty($this->_group) ? "" : " GROUP BY ". $this->_group;
 		$sql .= empty($this->_having) ? "" : " HAVING ". implode(" AND ", $this->_having);
@@ -147,6 +147,9 @@ class Table {
 		}
 		$sql .= $this->_for_update;
 		$sql .= $this->_lock_in_share_model;
+
+		$this->_count_where = $this->_where;
+		$this->_count_where_params = $this->_where_params;
 		return $this->vquery($sql, $params);
 	}
 
@@ -244,7 +247,6 @@ class Table {
 	 * @return Table
 	 */
 	public function reset() {
-		$this->_keywords = array();
 		$this->_where = array();
 		$this->_where_params = array();
 		$this->_group = null;
@@ -256,24 +258,6 @@ class Table {
 		$this->_for_update = "";
 		$this->_lock_in_share_model = "";
 		return $this;
-	}
-
-	/**
-	 * 设置MySQL关键字
-	 * @param string $keyword
-	 * @return Table
-	 */
-	public function keyword($keyword) {
-		$this->_keywords[] = $keyword;
-		return $this;
-	}
-
-	/**
-	 * 设置 SQL_CALC_FOUND_ROWS
-	 * @return Table
-	 */
-	public function calcFoundRows() {
-		return $this->keyword("SQL_CALC_FOUND_ROWS");
 	}
 
 	/**
@@ -401,7 +385,9 @@ class Table {
 	 * @return int
 	 */
 	public function count() {
-		return $this->vquery("SELECT FOUND_ROWS()")->fetchColumn();
+		$sql = "SELECT count(*) FROM `{$this->_table}`";
+		$sql .= empty($this->_count_where) ? "" : " WHERE ". implode(" AND ", $this->_count_where);
+		return $this->vquery($sql, $this->_count_where_params)->fetchColumn();
 	}
 
 	/**

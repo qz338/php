@@ -104,7 +104,7 @@ var_dump($userTable->limitOffset(3, 3)->select()->fetchAll());
 var_dump($userTable->page(3, 3)->select()->fetchAll());
 
 // 条件 分页 总行数
-var_dump($userTable->where("r=?", 3)->order("id desc")->page(2, 3)->select()->fetchAll());
+var_dump($userTable->calcFoundRows()->where("r=?", 3)->order("id desc")->page(2, 3)->select()->fetchAll());
 echo $userTable->count(), "\n";
 
 // 复杂查询
