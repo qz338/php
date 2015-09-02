@@ -151,7 +151,7 @@ function rowsToFloor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
  * @return array
  */
 function select_options($options, $name, $default = 0, $top = null, $attr = "") {
-	$val = isset($_GET[$name]) ? $_GET[$name] ? $default;
+	$val = isset($_GET[$name]) ? $_GET[$name] : $default;
 	$options[0] = is_null($top) ? $options[0] : $top;
 	$html = "";
 	foreach ($options as $key => $value) {
