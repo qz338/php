@@ -140,3 +140,23 @@ function rowsToFloor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
 	}
 	return $items;
 }
+
+/**
+ * select option 辅助函数
+ * @param array $options
+ * @param string $name
+ * @param string $default
+ * @param string $top
+ * @param string $attr
+ * @return array
+ */
+function select_options($options, $name, $default = 0, $top = null, $attr = "") {
+	$val = isset($_GET[$name]) ? $_GET[$name] ? $default;
+	$options[0] = is_null($top) ? $options[0] : $top;
+	$html = "";
+	foreach ($options as $key => $value) {
+		$selected = $val == $key ? ' selected="selected"' : '';
+		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $key, $selected, $attr, $value, "\n");
+	}
+	return $html;
+}
