@@ -144,16 +144,80 @@ function rowsToFloor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
 /**
  * select option 辅助函数
  * @param array $options
- * @param string $name
- * @param string $default
+ * @param string $val
  * @return array
  */
-function select_options($options, $name, $default = -1) {
-	$val = isset($_GET[$name]) ? $_GET[$name] : $default;
+function select_options($options, $val = -1) {
 	$html = "";
 	foreach ($options as $key => $value) {
 		$selected = $val == $key ? ' selected="selected"' : '';
 		$html .= sprintf('<option value="%s"%s>%s</option>%s', $key, $selected, $value, "\n");
 	}
 	return $html;
+}
+
+/**
+ * 获取的默认参数
+ * @param string $key
+ * @param string $default
+ * @return array
+ */
+function get($key, $default = "") {
+	return isset($_GET[$key]) ? $_GET[$key] : $default;
+}
+
+/**
+ * 获取的默认参数
+ * @param string $key
+ * @param string $default
+ * @return array
+ */
+function post($key, $default = "") {
+	return isset($_POST[$key]) ? $_POST[$key] : $default;
+}
+
+/**
+ * 显示成功消息
+ * @param string $msg
+ * @param string $url
+ * @return array
+ */
+function success_message($msg, $url = "") {
+	header("Content-Type: text/html; charset=utf-8");
+	if (empty($url)) {
+		exit("<script>alert('$msg');history.go(-1);</script>");
+	} else {
+		exit("<script>alert('$msg');location.href='$url';</script>");
+	}
+}
+
+/**
+ * 显示错误消息
+ * @param string $msg
+ * @param string $url
+ * @return array
+ */
+function error_message($msg, $url = "") {
+	header("Content-Type: text/html; charset=utf-8");
+	if (empty($url)) {
+		exit("<script>alert('$msg');history.go(-1);</script>");
+	} else {
+		exit("<script>alert('$msg');location.href='$url';</script>");
+	}
+}
+
+/**
+ * 获取的默认参数
+ * @param string $status
+ * @param string $message
+ * @param array $data
+ * @return array
+ */
+function json_message($status, $message, $data = array()) {
+	header("Content-Type: application/json; charset=utf-8");
+	$resp = compact("status", "message");
+	if (!empty($data)) {
+		$resp["data"] = $data;
+	}
+	exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
 }
