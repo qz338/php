@@ -398,16 +398,18 @@ class Table {
 	 * @return Table
 	 */
 	public function plus($col, $val = 1) {
-		$sets = array("`$col` = `$col` + $val");
+		$sets = array("`$col` = `$col` + ?");
+		$vals = array($val);
 		$args = array_slice(func_get_args(), 2);
 		while (count($args) > 1) {
 			$col = array_shift($args);
 			$val = array_shift($args);
-			$sets[] = "`$col` = `$col` + $val";
+			$sets[] = "`$col` = `$col` + ?";
+			$vals[] = $val;
 		}
 		$sql = "UPDATE `{$this->_table}` SET ".implode(", ", $sets);
 		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
-		$params = array_merge(array($val), $this->_where_params);
+		$params = array_merge($vals, $this->_where_params);
 		$this->vquery($sql, $params);
 		return $this;
 	}
