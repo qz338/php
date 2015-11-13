@@ -434,9 +434,6 @@ class Table {
 	 * @return array
 	 */
 	public function find($id) {
-		if (empty($id)) {
-			$id = $_REQUEST[$this->_pk];
-		}
 		return $this->where("`{$this->_pk}` = ?", $id)->select()->fetch();
 	}
 
