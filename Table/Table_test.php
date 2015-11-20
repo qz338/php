@@ -1,7 +1,7 @@
 <?php
 // 数据库表结构
 /*
-CREATE TABLE `user_test` (
+CREATE TABLE `table_user` (
 `id` int(11) NOT NULL AUTO_INCREMENT,
 `username` varchar(45) NOT NULL,
 `password` varchar(45) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE `user_test` (
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `blog_test` (
+CREATE TABLE `table_blog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `title` varchar(45) NOT NULL,
@@ -30,11 +30,12 @@ Table::$__dbname = "test";
 Table::$__charset = "utf8";
 
 // 创建实体对象
-$userTable = new Table("user_test");
-$blogTable = new Table("blog_test");
+$userTable = new Table("table_user");
+$blogTable = new Table("table_blog");
 
 // 开启调试模式
-$userTable->debug = true;
+// $userTable->debug = true;
+// $blogTable->debug = true;
 
 // 插入数据
 for ($i=1; $i<=100; $i++) {

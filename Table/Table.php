@@ -37,6 +37,14 @@ class Table {
 
 	public $debug = false;					// 调试模式
 
+	public static $param_types = array(		// 参数类型
+		"boolean" 	=> PDO::PARAM_BOOL,
+		"NULL" 		=> PDO::PARAM_NULL,
+		"double" 	=> PDO::PARAM_INT,
+		"integer" 	=> PDO::PARAM_INT,
+		"string" 	=> PDO::PARAM_STR,
+	);
+
 	/**
 	 * Table Construct
 	 * @param string $table_name
@@ -68,7 +76,7 @@ class Table {
 				PDO::ATTR_PERSISTENT => true,
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-				PDO::ATTR_EMULATE_PREPARES => false,
+				// PDO::ATTR_EMULATE_PREPARES => false,
 		);
 		return self::$__pdo = new PDO($dsn, self::$__user, self::$__password, $options);
 	}
@@ -112,7 +120,7 @@ class Table {
 		}
 		$stmt = $this->getPDO()->prepare($sql_new);
 		foreach ($params_new as $i => $param) {
-			$stmt->bindValue($i+1, $param);
+			$stmt->bindValue($i+1, $param, $this->getParamType($param));
 		}
 		if ($this->debug) {
 			var_dump($sql_new, $params_new);
@@ -120,6 +128,16 @@ class Table {
 		$stmt->executeResult = $stmt->execute();
 		$this->reset();
 		return $stmt;
+	}
+
+	/**
+	 * 获取参数类型
+	 * @param mixed $param
+	 * @return integer
+	 */
+	public function getParamType($param) {
+		$type = gettype($param);
+		return array_key_exists($type, self::$param_types) ? self::$param_types[$type] : PDO::PARAM_STR;
 	}
 
 	/**
