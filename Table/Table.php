@@ -24,6 +24,8 @@ class Table {
 	public $_keywords = array();			// keywords
 	public $_where = array();				// where
 	public $_where_params = array();		// where params
+	public $_count_where = array();			// count where
+	public $_count_where_params = array();	// count where params
 	public $_group = "";					// group
 	public $_having = array();				// having
 	public $_having_params = array();		// having params
@@ -148,6 +150,8 @@ class Table {
 		}
 		$sql .= $this->_for_update;
 		$sql .= $this->_lock_in_share_model;
+		$this->_count_where = $this->_where;
+		$this->_count_where_params = $this->_where_params;
 		return $this->vquery($sql, $params);
 	}
 
@@ -265,7 +269,9 @@ class Table {
 	 * @return Table
 	 */
 	public function keyword($keyword) {
-		$this->_keywords[] = $keyword;
+		if ($this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME) == "mysql") {
+			$this->_keywords[] = $keyword;
+		}
 		return $this;
 	}
 
@@ -402,7 +408,13 @@ class Table {
 	 * @return int
 	 */
 	public function count() {
-		return $this->vquery("SELECT FOUND_ROWS()")->fetchColumn();
+		if ($this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME) == "mysql") {
+			return $this->vquery("SELECT FOUND_ROWS()")->fetchColumn();
+		} else {
+			$sql = "SELECT count(*) FROM `{$this->_table}`";
+			$sql .= empty($this->_count_where) ? "" : " WHERE ". implode(" AND ", $this->_count_where);
+			return $this->vquery($sql, $this->_count_where_params)->fetchColumn();
+		}
 	}
 
 	/**

@@ -25,7 +25,7 @@ include "Table.php";
 
 Table::$__host = "127.0.0.1";
 Table::$__user = "root";
-Table::$__password = "123456";
+Table::$__password = "";
 Table::$__dbname = "test";
 Table::$__charset = "utf8";
 
@@ -179,7 +179,6 @@ var_dump($userTable->select("r, id")->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_COLUM
 var_dump($userTable->select("r, nickname")->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_KEY_PAIR)); // 获取数据分组
 var_dump($userTable->select()->fetchAll(PDO::FETCH_OBJ)); // 获取对象 指定获取方式，将结果集中的每一行作为一个属性名对应列名的对象返回。
 var_dump($userTable->select()->fetchAll(PDO::FETCH_CLASS)); // 获取对象 指定获取方式，返回一个所请求类的新实例，映射列到类中对应的属性名。 Note: 如果所请求的类中不存在该属性，则调用 __set() 魔术方法
-var_dump($userTable->select()->fetchAll(PDO::FETCH_INTO)); // 获取对象 指定获取方式，更新一个请求类的现有实例，映射列到类中对应的属性名。
 var_dump($userTable->select()->fetchAll(PDO::FETCH_FUNC, function($id, $username, $password, $r){ // 获取自定义行
 	return array("id"=>$id, "name"=>"$username - $password - $r");
 }));
