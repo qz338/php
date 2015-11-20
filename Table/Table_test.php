@@ -33,6 +33,9 @@ Table::$__charset = "utf8";
 $userTable = new Table("user_test");
 $blogTable = new Table("blog_test");
 
+// 开启调试模式
+$userTable->debug = true;
+
 // 插入数据
 for ($i=1; $i<=100; $i++) {
 	$user = array(

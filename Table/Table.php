@@ -35,6 +35,8 @@ class Table {
 	public $_for_update = "";				// read lock
 	public $_lock_in_share_model = "";		// write lock
 
+	public $debug = false;					// 调试模式
+
 	/**
 	 * Table Construct
 	 * @param string $table_name
@@ -66,7 +68,7 @@ class Table {
 				PDO::ATTR_PERSISTENT => true,
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 				PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-				// PDO::ATTR_EMULATE_PREPARES => false,
+				PDO::ATTR_EMULATE_PREPARES => false,
 		);
 		return self::$__pdo = new PDO($dsn, self::$__user, self::$__password, $options);
 	}
@@ -110,18 +112,11 @@ class Table {
 		}
 		$stmt = $this->getPDO()->prepare($sql_new);
 		foreach ($params_new as $i => $param) {
-			switch (gettype($param)) {
-				case "integer":
-					$stmt->bindValue($i+1, $param, PDO::PARAM_INT);
-					break;
-				case "NULL":
-					$stmt->bindValue($i+1, $param, PDO::PARAM_NULL);
-					break;
-				default :
-					$stmt->bindValue($i+1, $param);
-			}
+			$stmt->bindValue($i+1, $param);
 		}
-// 		echo $sql_new, "\n"; var_dump($params_new); // exit();
+		if ($this->debug) {
+			var_dump($sql_new, $params_new);
+		}
 		$stmt->executeResult = $stmt->execute();
 		$this->reset();
 		return $stmt;
