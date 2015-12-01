@@ -30,15 +30,29 @@ Table::$__dbname = "test";
 Table::$__charset = "utf8";
 
 // 创建实体对象
-$userTable = new Table("table_user");
-$blogTable = new Table("table_blog");
+$userTable = new Table("table_user", "u");
+$blogTable = new Table("table_blog", "b");
 
 // 开启调试模式
-// $userTable->debug = true;
-// $blogTable->debug = true;
+$userTable->debug = true;
+$blogTable->debug = true;
+
+$i = 112233;
+$user = array(
+		"username" => "admin$i",
+		"password" => "admin$i",
+		"nickname" => "管理员$i",
+		"r" => 1.124,
+);
+echo $userTable->insert($user)->rowCount(), "\n"; exit();
+
+// sql查询
+$sql = "select * from table_user where id > ? and id < ?";
+var_dump($userTable->query($sql, 10, 20));
+var_dump($userTable->vquery($sql, array(10, 20)));
 
 // 插入数据
-for ($i=1; $i<=100; $i++) {
+for ($i=1; $i<=10; $i++) {
 	$user = array(
 			"username" => "admin$i",
 			"password" => "admin$i",
@@ -48,12 +62,16 @@ for ($i=1; $i<=100; $i++) {
 	echo $userTable->insert($user)->rowCount(), "\n";
 	echo $userTable->lastInsertId(), "\n";
 }
-// 获取数据
-var_dump($userTable->where("id > ?", 0)->select()->fetchAll());
+
+// 查询数据
+var_dump($userTable->select()->fetchAll()); // 获取所有数据
+var_dump($userTable->select()->fetch()); // 获取一行数据
+var_dump($userTable->select()->fetchColumn()); // 获取第一行第一列数据
+var_dump($userTable->select()->fetchColumn(1)); // 获取第一行第二列数据
 
 // 批量插入数据
 $fields = array("username","password","nickname","r");
-for ($i=101; $i<=200; $i++) {
+for ($i=11; $i<=100; $i++) {
 	$rows[] = array("admin$i","admin$i","管理员$i",mt_rand(0, 4));
 }
 $userTable->batchInsert($fields, $rows);
@@ -68,7 +86,6 @@ $user = array(
 		"r" => mt_rand(0, 4),
 );
 echo $userTable->where("id = ?", 4)->update($user)->rowCount(), "\n";
-
 // 根据主键查询数据
 var_dump($userTable->find(4));
 
@@ -81,13 +98,11 @@ $user = array(
 		"r" => mt_rand(0, 4),
 );
 echo $userTable->replace($user)->rowCount(), "\n";
-
 // 根据主键查询数据
 var_dump($userTable->find(4));
 
 // 删除数据
 echo $userTable->where("id = ?", 4)->delete()->rowCount(), "\n";
-
 // 根据主键查询数据
 var_dump($userTable->find(4));
 
@@ -95,14 +110,13 @@ var_dump($userTable->find(4));
 var_dump($userTable->where("id > ?", 4)->where("id in (?)", array(5,7,9))->select()->fetchAll());
 
 // 分组 过滤
-var_dump($userTable->group("r")->having("c between ? and ?", 10, 20)->having("c > ?", 1)
-	->select("*, r, count(*) as c")->fetchAll());
+var_dump($userTable->group("r")->having("c between ? and ?", 10, 40)->having("c > ?", 1)->select("*, r, count(*) as c")->fetchAll());
 
 // 排序
 var_dump($userTable->order("username, id desc")->select()->fetchAll());
 
 // 限制行数
-var_dump($userTable->limitOffset(3, 3)->select()->fetchAll());
+var_dump($userTable->limit(3)->offset(3)->select()->fetchAll());
 
 // 分页
 var_dump($userTable->page(3, 3)->select()->fetchAll());
@@ -115,6 +129,9 @@ echo $userTable->count(), "\n";
 var_dump($userTable->where("id > ?", 0)->where("id < ?", 100)
 	->group("r")->having("c between ? and ?", 1, 100)->having("c > ?", 1)
 	->order("c desc")->page(2, 3)->select("*, count(*) as c")->fetchAll());
+
+// 联合查询
+var_dump($blogTable->join("table_user AS u", "b.user_id = u.id")->where("b.id < ?", 20)->select("b.*, u.username")->fetchAll());
 
 // 列加减
 $id = 2;
@@ -143,11 +160,12 @@ $user = array(
 );
 echo $userTable->save($user)->rowCount(), "\n";
 var_dump($userTable->find(3));
+
 // 保存 添加
 $user = array(
-		"username" => "admin11",
-		"password" => "admin11",
-		"nickname" => "管理员11",
+		"username" => "admin9999",
+		"password" => "admin9999",
+		"nickname" => "管理员9999",
 		"r" => mt_rand(0, 4),
 );
 echo $userTable->save($user)->rowCount(), "\n";

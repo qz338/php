@@ -8,36 +8,41 @@ class Table {
 	/**
 	 * @var PDO
 	 */
-	public static $__pdo = null;			// 默认PDO对象
-	public static $__host = "127.0.0.1";	// 默认主机
-	public static $__user = "root";			// 默认账户
-	public static $__password = "123456";	// 默认密码
-	public static $__dbname = "test";		// 默认数据库名称
-	public static $__charset = "utf8";		// 默认字符集
+	public static $__pdo = null;				// 默认PDO对象
+	public static $__host = "127.0.0.1";		// 默认主机
+	public static $__user = "root";				// 默认账户
+	public static $__password = "123456";		// 默认密码
+	public static $__dbname = "test";			// 默认数据库名称
+	public static $__charset = "utf8";			// 默认字符集
 
 	/**
 	 * @var PDO
 	 */
-	public $_pdo = null;					// PDO对象
-	public $_table = null;					// table
-	public $_pk = "id";						// paramry
-	public $_keywords = array();			// keywords
-	public $_where = array();				// where
-	public $_where_params = array();		// where params
-	public $_count_where = array();			// count where
-	public $_count_where_params = array();	// count where params
-	public $_group = "";					// group
-	public $_having = array();				// having
-	public $_having_params = array();		// having params
-	public $_order = null;					// order
-	public $_limit = null;					// limit
-	public $_offset = null;					// offset
-	public $_for_update = "";				// read lock
-	public $_lock_in_share_model = "";		// write lock
+	public $pdo = null;							// PDO对象
+	public $prefix = "";						// 表前缀
+	public $table = "table";					// 表名
+	public $tab = "t";							// 表别名
+	public $pk = "id";							// 主键
+	public $debug = false;						// 调试模式
 
-	public $debug = false;					// 调试模式
+	public $_keywords = array();				// keywords
+	public $_columns = array();					// columns
+	public $_table = "";						// table
+	public $_joins = array();					// joins
+	public $_wheres = array();					// where
+	public $_wheres_params = array();			// where params
+	// public $_count_wheres = array();			// count where
+	// public $_count_wheres_params = array();		// count where params
+	public $_groups = array();					// group
+	public $_havings = array();					// having
+	public $_havings_params = array();			// having params
+	public $_orders = array();					// order
+	public $_limit = null;						// limit
+	public $_offset = null;						// offset
+	public $_for_update = "";					// read lock
+	public $_lock_in_share_mode = "";			// write lock
 
-	public static $param_types = array(		// 参数类型
+	public static $param_types = array(			// 参数类型
 		"boolean" 	=> PDO::PARAM_BOOL,
 		"NULL" 		=> PDO::PARAM_NULL,
 		"double" 	=> PDO::PARAM_INT,
@@ -47,15 +52,17 @@ class Table {
 
 	/**
 	 * Table Construct
-	 * @param string $table_name
-	 * @param string $pk
-	 * @param string $prefix
-	 * @param PDO $pdo
+	 * @param string $table 表名
+	 * @param string $tab 表别名
+	 * @param string $pk 表主键
+	 * @param PDO $pdo PDO
 	 */
-	function __construct($table=null, $pk=null, PDO $pdo=null) {
-		$this->_table = isset($table) ? $table : $this->_table;
-		$this->_pk = isset($pk) ? $pk : $this->_pk;
-		$this->_pdo = $pdo;
+	function __construct($table=null, $tab=null, $pk=null, PDO $pdo=null) {
+		$this->table = isset($table) ? $table : $this->table;
+		$this->tab = isset($tab) ? $tab : $this->tab;
+		$this->pk = isset($pk) ? $pk : $this->pk;
+		$this->pdo = isset($pdo) ? $pdo : $this->pdo;
+		$this->_table = $this->prefix.$this->table;
 	}
 
 	/**
@@ -63,8 +70,8 @@ class Table {
 	 * @return PDO
 	 */
 	public function getPDO() {
-		if (isset($this->_pdo)) {
-			return $this->_pdo;
+		if (isset($this->pdo)) {
+			return $this->pdo;
 		}
 
 		if (isset(self::$__pdo)) {
@@ -86,7 +93,18 @@ class Table {
 	 * @return string
 	 */
 	public function getPK() {
-		return $this->_pk;
+		return $this->pk;
+	}
+
+	/**
+	 * 设置表前缀
+	 * @param string $prefix
+	 * @return Table
+	 */
+	public function setPrefix($prefix) {
+		$this->prefix = $prefix;
+		$this->_table = $this->prefix.$this->table;
+		return $this;
 	}
 
 	/**
@@ -106,27 +124,15 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function vquery($sql, array $params = array()) {
-		$sqls = explode("?", $sql);
-		$sql_new = array_shift($sqls);
-		$params_new = array();
-		foreach ($sqls as $i => $sql_item) {
-			if (is_array($params[$i])) {
-				$sql_new .= str_repeat("?,", count($params[$i])-1)."?".$sql_item;
-				$params_new = array_merge($params_new, $params[$i]);
-			} else {
-				$sql_new .= "?".$sql_item;
-				$params_new[] = $params[$i];
-			}
-		}
-		$stmt = $this->getPDO()->prepare($sql_new);
-		foreach ($params_new as $i => $param) {
+		$stmt = $this->getPDO()->prepare($sql);
+		foreach ($params as $i => $param) {
 			$stmt->bindValue($i+1, $param, $this->getParamType($param));
 		}
 		if ($this->debug) {
-			var_dump($sql_new, $params_new);
+			var_dump($sql, $params);
 		}
-		$stmt->executeResult = $stmt->execute();
 		$this->reset();
+		$stmt->executeResult = $stmt->execute();
 		return $stmt;
 	}
 
@@ -142,29 +148,37 @@ class Table {
 
 	/**
 	 * 查询数据
-	 * @param string $field
+	 * @param string $columns
 	 * @return PDOStatement
 	 */
 	public function select($columns="*") {
-		$params = array_merge($this->_where_params, $this->_having_params);
+		$this->_columns[] = $columns;
+
 		$keywords = empty($this->_keywords) ? "" : " ".implode(" ", $this->_keywords);
-		$sql = "SELECT$keywords $columns FROM `{$this->_table}`";
-		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
-		$sql .= empty($this->_group) ? "" : " GROUP BY ". $this->_group;
-		$sql .= empty($this->_having) ? "" : " HAVING ". implode(" AND ", $this->_having);
-		$sql .= empty($this->_order) ? "" : " ORDER BY ". $this->_order;
+		$columns = empty($this->_columns) ? "*" : implode(", ", $this->_columns);
+		$table = $this->_table . (empty($this->_joins) ? "" : "` AS `".$this->tab);
+		$joins = empty($this->_joins) ? "" : " LEFT JOIN ".implode(" LEFT JOIN ", $this->_joins);
+		$wheres = empty($this->_wheres) ? "" : " WHERE ".implode(" AND ", $this->_wheres);
+		$groups = empty($this->_groups) ? "" : " GROUP BY ".implode(", ", $this->_groups);
+		$havings = empty($this->_havings) ? "" : " HAVING ".implode(" AND ", $this->_havings);
+		$orders = empty($this->_orders) ? "" : " ORDER BY ".implode(", ", $this->_orders);
+		$limit = empty($this->_limit) ? "" : " LIMIT ?";
+		$offset = empty($this->_offset) ? "" : " OFFSET ?";
+		$forUpdate = $this->_for_update;
+		$lockInShareMode = $this->_lock_in_share_mode;
+		$sql = sprintf("SELECT%s %s FROM `%s`%s%s%s%s%s%s%s%s%s", $keywords, $columns, $table, $joins, $wheres, $groups, $havings, $orders, $limit, $offset, $forUpdate, $lockInShareMode);
+
+		$params = array_merge($this->_wheres_params, $this->_havings_params);
 		if (isset($this->_limit)) {
-			$sql .= " LIMIT ?";
 			$params[] = $this->_limit;
-			if (isset($this->_offset)) {
-				$sql .= " OFFSET ?";
-				$params[] = $this->_offset;
-			}
 		}
-		$sql .= $this->_for_update;
-		$sql .= $this->_lock_in_share_model;
-		$this->_count_where = $this->_where;
-		$this->_count_where_params = $this->_where_params;
+		if (isset($this->_offset)) {
+			$params[] = $this->_offset;
+		}
+
+		// $this->_count_wheres = $this->_wheres;
+		// $this->_count_wheres_params = $this->_wheres_params;
+
 		return $this->vquery($sql, $params);
 	}
 
@@ -174,39 +188,44 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function insert(array $data) {
-		$sql = "INSERT `{$this->_table}` SET";
+		$sets = array();
 		$params = array();
-		foreach ($data as $col=>$val) {
-			$sql .= " `$col` = ?,";
+		foreach ($data as $col => $val) {
+			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = " ";
+		$sql = sprintf("INSERT `%s` SET %s", $this->_table, implode(", ", $sets));
 		return $this->vquery($sql, $params);
 	}
 	
 	/**
 	 * 批量插入数据
-	 * @param array $names
+	 * @param array $columns
 	 * @param array $rows
 	 * @param number $batch
 	 * @return Table
 	 */
-	public function batchInsert(array $fields, array $rows, $batch=1000) {
+	public function batchInsert(array $columns, array $rows, $batch=1000) {
+		$value = "(?".str_repeat(",?", count($columns)-1).")";
+		$columns = implode("`,`", $columns);
+		$values = array();
+		$params = array();
 		$i = 0;
-		$sql = "INSERT `{$this->_table}` (`".implode("`, `", $fields)."`) VALUES ";
 		foreach ($rows as $row) {
+			$values[] = $value;
+			$params = array_merge($params, $row);
 			$i++;
-			$sql .= "('".implode("','", array_map("addslashes", $row))."'),";
 			if ($i >= $batch) {
-				$sql{strlen($sql)-1} = " ";
-				$this->query($sql);
+				$sql = sprintf("INSERT `%s` (`%s`) VALUES %s", $this->_table, $columns, implode(",", $values));
+				$this->vquery($sql, $params);
 				$i = 0;
-				$sql = "INSERT `{$this->_table}` (`".implode("`, `", $fields)."`) VALUES ";
+				$values = array();
+				$params = array();
 			}
 		}
 		if ($i > 0) {
-			$sql{strlen($sql)-1} = " ";
-			$this->query($sql);
+			$sql = sprintf("INSERT `%s` (`%s`) VALUES %s", $this->_table, $columns, implode(",", $values));
+			$this->vquery($sql, $params);
 		}
 		return $this;
 	}
@@ -217,15 +236,15 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function update(array $data) {
-		$sql = "UPDATE `{$this->_table}` SET";
+		$sets = array();
 		$params = array();
-		foreach ($data as $col=>$val) {
-			$sql .= " `$col` = ?,";
+		foreach ($data as $col => $val) {
+			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = " ";
-		$sql .= empty($this->_where) ? "" : "WHERE ". implode(" AND ", $this->_where);
-		$params = array_merge($params, $this->_where_params);
+		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		$sql = sprintf("UPDATE `%s` SET %s%s", $this->_table, implode(", ", $sets), $wheres);
+		$params = array_merge($params, $this->_wheres_params);
 		return $this->vquery($sql, $params);
 	}
 
@@ -235,15 +254,13 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function replace(array $data) {
-		$sql = "REPLACE `{$this->_table}` SET";
+		$sets = array();
 		$params = array();
-		foreach ($data as $col=>$val) {
-			$sql .= " `$col` = ?,";
+		foreach ($data as $col => $val) {
+			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$sql{strlen($sql)-1} = " ";
-		$sql .= empty($this->_where) ? "" : "WHERE ". implode(" AND ", $this->_where);
-		$params = array_merge($params, $this->_where_params);
+		$sql = sprintf("REPLACE `%s` SET %s", $this->_table, implode(", ", $sets));
 		return $this->vquery($sql, $params);
 	}
 
@@ -252,9 +269,9 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function delete() {
-		$sql = "DELETE FROM `{$this->_table}`";
-		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
-		return $this->vquery($sql, $this->_where_params);
+		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		$sql = sprintf("DELETE FROM `%s`%s", $this->_table, $wheres);
+		return $this->vquery($sql, $this->_wheres_params);
 	}
 
 	/**
@@ -263,16 +280,18 @@ class Table {
 	 */
 	public function reset() {
 		$this->_keywords = array();
-		$this->_where = array();
-		$this->_where_params = array();
-		$this->_group = null;
-		$this->_having = array();
-		$this->_having_params = array();
-		$this->_order = null;
+		$this->_columns = array();
+		$this->_joins = array();
+		$this->_wheres = array();
+		$this->_wheres_params = array();
+		$this->_groups = array();
+		$this->_havings = array();
+		$this->_havings_params = array();
+		$this->_orders = array();
 		$this->_limit = null;
 		$this->_offset = null;
 		$this->_for_update = "";
-		$this->_lock_in_share_model = "";
+		$this->_lock_in_share_mode = "";
 		return $this;
 	}
 
@@ -282,14 +301,12 @@ class Table {
 	 * @return Table
 	 */
 	public function keyword($keyword) {
-		if ($this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME) == "mysql") {
-			$this->_keywords[] = $keyword;
-		}
+		$this->_keywords[] = $keyword;
 		return $this;
 	}
 
 	/**
-	 * 设置 SQL_CALC_FOUND_ROWS
+	 * 设置SQL_CALC_FOUND_ROWS关键字
 	 * @return Table
 	 */
 	public function calcFoundRows() {
@@ -297,59 +314,116 @@ class Table {
 	}
 
 	/**
-	 * where查询条件
-	 * @param string $format
+	 * column返回的列
+	 * @param string $column
 	 * @return Table
 	 */
-	public function where($format) {
+	public function column($column) {
+		$this->_columns[] = $column;
+		return $this;
+	}
+	
+	/**
+	 * join连表查询
+	 * @param string $join
+	 * @param string $cond
+	 * @return Table
+	 */
+	public function join($join, $cond) {
+		$this->_joins[] = sprintf("%s ON %s", $join, $cond);
+		return $this;
+	}
+
+	/**
+	 * where查询条件
+	 * @param string $where
+	 * @return Table
+	 */
+	public function where($where) {
 		$args = func_get_args();
 		array_shift($args);
-		$this->_where[] = $format;
-		$this->_where_params = array_merge($this->_where_params, $args);
+
+		$ws = explode("?", $where);
+		$where = array_shift($ws);
+		$params = array();
+		foreach ($ws as $i => $w) {
+			if (is_array($args[$i])) {
+				$where .= "?".str_repeat(",?", count($args[$i])-1).$w;
+				$params = array_merge($params, $args[$i]);
+			} else {
+				$where .= "?".$w;
+				$params[] = $args[$i];
+			}
+		}
+
+		$this->_wheres[] = $where;
+		$this->_wheres_params = array_merge($this->_wheres_params, $params);
 		return $this;
 	}
 
 	/**
 	 * group分组
-	 * @param string $columns
+	 * @param string $group
 	 * @return Table
 	 */
-	public function group($columns) {
-		$this->_group = $columns;
+	public function group($group) {
+		$this->_groups[] = $group;
 		return $this;
 	}
 
 	/**
 	 * having过滤条件
-	 * @param string $format
+	 * @param string $having
 	 * @return Table
 	 */
-	public function having($format) {
+	public function having($having) {
 		$args = func_get_args();
 		array_shift($args);
-		$this->_having[] = $format;
-		$this->_having_params = array_merge($this->_having_params, $args);
+
+		$ws = explode("?", $having);
+		$having = array_shift($ws);
+		$params = array();
+		foreach ($ws as $i => $w) {
+			if (is_array($args[$i])) {
+				$having .= "?".str_repeat(",?", count($args[$i])-1).$w;
+				$params = array_merge($params, $args[$i]);
+			} else {
+				$having .= "?".$w;
+				$params[] = $args[$i];
+			}
+		}
+
+		$this->_havings[] = $having;
+		$this->_havings_params = array_merge($this->_havings_params, $params);
 		return $this;
 	}
 
 	/**
 	 * order排序
-	 * @param string $columns
+	 * @param string $order
 	 * @return Table
 	 */
 	public function order($order) {
-		$this->_order = $order;
+		$this->_orders[] = $order;
 		return $this;
 	}
 
 	/**
-	 * limit数据偏移
-	 * @param number $offset
+	 * limit数据
 	 * @param number $limit
 	 * @return Table
 	 */
-	public function limitOffset($limit, $offset=null) {
+	public function limit($limit) {
 		$this->_limit = $limit;
+		return $this;
+	}
+
+	/**
+	 * offset偏移
+	 * @param number $offset
+	 * @return Table
+	 */
+	public function offset($offset) {
 		$this->_offset = $offset;
 		return $this;
 	}
@@ -359,7 +433,7 @@ class Table {
 	 * @return Table
 	 */
 	public function forUpdate() {
-		$this->forUpdate = " FOR UPDATE";
+		$this->_for_update = " FOR UPDATE";
 		return $this;
 	}
 
@@ -368,7 +442,7 @@ class Table {
 	 * @return Table
 	 */
 	public function lockInShareMode() {
-		$this->_lock_in_share_model = " LOCK IN SHARE MODE";
+		$this->_lock_in_share_mode = " LOCK IN SHARE MODE";
 		return $this;
 	}
 
@@ -421,13 +495,10 @@ class Table {
 	 * @return int
 	 */
 	public function count() {
-		if ($this->getPDO()->getAttribute(PDO::ATTR_DRIVER_NAME) == "mysql") {
-			return $this->vquery("SELECT FOUND_ROWS()")->fetchColumn();
-		} else {
-			$sql = "SELECT count(*) FROM `{$this->_table}`";
-			$sql .= empty($this->_count_where) ? "" : " WHERE ". implode(" AND ", $this->_count_where);
-			return $this->vquery($sql, $this->_count_where_params)->fetchColumn();
-		}
+		return $this->vquery("SELECT FOUND_ROWS()")->fetchColumn();
+		// $wheres = empty($this->_count_wheres) ? "" : " WHERE ".implode(" AND ", $this->_count_wheres);
+		// $sql = sprintf("SELECT count(*) FROM `%s`%s", $this->_table, $wheres);
+		// return $this->vquery($sql, $this->_count_wheres_params)->fetchColumn();
 	}
 
 	/**
@@ -437,18 +508,18 @@ class Table {
 	 * @return Table
 	 */
 	public function plus($col, $val = 1) {
-		$sets = array("`$col` = `$col` + ?");
+		$sets = array(sprintf("`%s` = `%s` + ?", $col, $col));
 		$vals = array($val);
 		$args = array_slice(func_get_args(), 2);
 		while (count($args) > 1) {
 			$col = array_shift($args);
 			$val = array_shift($args);
-			$sets[] = "`$col` = `$col` + ?";
+			$sets[] = sprintf("`%s` = `%s` + ?", $col, $col);
 			$vals[] = $val;
 		}
-		$sql = "UPDATE `{$this->_table}` SET ".implode(", ", $sets);
-		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
-		$params = array_merge($vals, $this->_where_params);
+		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		$sql = sprintf("UPDATE `%s` SET %s%s", $this->_table, implode(", ", $sets), $wheres);
+		$params = array_merge($vals, $this->_wheres_params);
 		$this->vquery($sql, $params);
 		return $this;
 	}
@@ -460,9 +531,9 @@ class Table {
 	 * @return int
 	 */
 	public function incr($col, $val = 1) {
-		$sql = "UPDATE `{$this->_table}` SET `$col` =  last_insert_id(`$col` + ?)";
-		$sql .= empty($this->_where) ? "" : " WHERE ". implode(" AND ", $this->_where);
-		$params = array_merge(array($val), $this->_where_params);
+		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		$sql = sprintf("UPDATE `%s` SET `%s` =  last_insert_id(`%s` + ?)%s", $this->_table, $col, $col, $wheres);
+		$params = array_merge(array($val), $this->_wheres_params);
 		$this->vquery($sql, $params);
 		return $this->getPDO()->lastInsertId();
 	}
@@ -473,7 +544,7 @@ class Table {
 	 * @return array
 	 */
 	public function find($id) {
-		return $this->where("`{$this->_pk}` = ?", $id)->select()->fetch();
+		return $this->where(sprintf("`%s` = ?", $this->pk), $id)->select()->fetch();
 	}
 
 	/**
@@ -482,10 +553,10 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function save(array $data) {
-		if (array_key_exists($this->_pk, $data)) {
-			$pk_val = $data[$this->_pk];
-			unset($data[$this->_pk]);
-			return $this->where("`{$this->_pk}` = ?", $pk_val)->update($data);
+		if (array_key_exists($this->pk, $data)) {
+			$pk_val = $data[$this->pk];
+			unset($data[$this->pk]);
+			return $this->where(sprintf("`%s` = ?", $this->pk), $pk_val)->update($data);
 		} else {
 			return $this->insert($data);
 		}
@@ -495,15 +566,15 @@ class Table {
 	 * 获取外键数据
 	 * @param array $rows
 	 * @param string $foreign_key
-	 * @param string $field
+	 * @param string $columns
 	 * @return PDOStatement
 	 */
-	public function foreignKey(array $rows, $foreign_key, $field="*") {
+	public function foreignKey(array $rows, $foreign_key, $columns="*") {
 		$ids = array_column($rows, $foreign_key);
 		if (empty($ids)) {
 			return new PDOStatement();
 		}
 		$ids = array_unique($ids);
-		return $this->where("`{$this->_pk}` in (?)", $ids)->select($field);
+		return $this->where(sprintf("`%s` in (?)", $this->pk), $ids)->select($columns);
 	}
 }
