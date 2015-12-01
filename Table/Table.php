@@ -121,6 +121,7 @@ class Table {
 	/**
 	 * 执行语句
 	 * @param string $sql
+	 * @param array $params
 	 * @return PDOStatement
 	 */
 	public function vquery($sql, array $params = array()) {
@@ -151,8 +152,10 @@ class Table {
 	 * @param string $columns
 	 * @return PDOStatement
 	 */
-	public function select($columns="*") {
-		$this->_columns[] = $columns;
+	public function select($columns=null) {
+		if (!empty($columns)) {
+			$this->_columns[] = $columns;
+		}
 
 		$keywords = empty($this->_keywords) ? "" : " ".implode(" ", $this->_keywords);
 		$columns = empty($this->_columns) ? "*" : implode(", ", $this->_columns);
@@ -532,7 +535,7 @@ class Table {
 	 */
 	public function incr($col, $val = 1) {
 		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
-		$sql = sprintf("UPDATE `%s` SET `%s` =  last_insert_id(`%s` + ?)%s", $this->_table, $col, $col, $wheres);
+		$sql = sprintf("UPDATE `%s` SET `%s` = last_insert_id(`%s` + ?)%s", $this->_table, $col, $col, $wheres);
 		$params = array_merge(array($val), $this->_wheres_params);
 		$this->vquery($sql, $params);
 		return $this->getPDO()->lastInsertId();

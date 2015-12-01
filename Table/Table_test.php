@@ -37,15 +37,6 @@ $blogTable = new Table("table_blog", "b");
 $userTable->debug = true;
 $blogTable->debug = true;
 
-$i = 112233;
-$user = array(
-		"username" => "admin$i",
-		"password" => "admin$i",
-		"nickname" => "管理员$i",
-		"r" => 1.124,
-);
-echo $userTable->insert($user)->rowCount(), "\n"; exit();
-
 // sql查询
 $sql = "select * from table_user where id > ? and id < ?";
 var_dump($userTable->query($sql, 10, 20));
