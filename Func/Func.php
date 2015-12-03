@@ -8,19 +8,22 @@
 /**
  * 是否post提交
  */
-function isPost() {
+function is_post() {
 	return $_SERVER["REQUEST_METHOD"] == "POST";
 }
 
 /**
  * 获取提交的数据
- * @param string $namelist
+ * @param string $names
+ * @param string $from
+ * @return data
  */
-function formData($namelist) {
-	$names = explode(",", $namelist);
+function form_data($names, array $from = array()) {
+	$names = array_map("trim", explode(",", $names));
+	$from = empty($from) ? $_POST : $from;
 	$data = array();
 	foreach ($names as $name) {
-		$data[$name] = $_REQUEST[$name];
+		$data[$name] = $from[$name];
 	}
 	return $data;
 }
@@ -48,7 +51,7 @@ function ip(){
  * @param number $i 多文件上传时的索引
  * @return bool
  */
-function isUpload($name, $index = null){
+function is_upload($name, $index = null){
 	if (!(isset($_SERVER["HTTP_CONTENT_TYPE"]) && strpos($_SERVER["HTTP_CONTENT_TYPE"], "multipart/form-data")===0)) {
 		exit('Upload: form error!<br />enctype="multipart/form-data"');
 	}
@@ -109,11 +112,11 @@ function today($offset = 28800) {
  * @param string $pkey
  * @return array
 */
-function rowsToTree($rows, $pid = 0, $key = "id", $pkey = "pid") {
+function rows2tree($rows, $pid = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
 		if($pid == $row[$pkey]) {	
-			$row["tree"] = rowsToTree($rows, $row[$key]);
+			$row["tree"] = rows2tree($rows, $row[$key]);
 			$items[] = $row;
 		}
 	}
@@ -129,13 +132,13 @@ function rowsToTree($rows, $pid = 0, $key = "id", $pkey = "pid") {
  * @param string $pkey
  * @return array
  */
-function rowsToFloor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
+function rows2floor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
 		if($pid == $row[$pkey]) {
 			$row["floor"] = $floor;
 			$items[] = $row;
-			$items = array_merge($items, rowsToFloor($rows, $row[$key], $floor+1));
+			$items = array_merge($items, rows2floor($rows, $row[$key], $floor+1));
 		}
 	}
 	return $items;
@@ -177,32 +180,111 @@ function post($key, $default = "") {
 }
 
 /**
- * 显示成功消息
- * @param string $msg
- * @param string $url
- * @return array
+ * 成功消息
+ *
+ * success_message 函数会根据是否Ajax请求响应不同的数据内容,除了第
+ * 一个参数为提示消息,之后的其他参数可以不按照顺序呢传参,函数会根据参
+ * 数的类型调整参数是跳转到的url,还是消息状态码或消息的数据
+ *
+ * @param string $message 消息内容
+ * @param string $url 跳转到的url
+ * @param integer $status 状态码
+ * @param array $data 消息的数据
+ * @param boolean $is_alert 是否显示信息
  */
-function success_message($msg, $url = "") {
-	header("Content-Type: text/html; charset=utf-8");
-	if (empty($url)) {
-		exit("<script>alert('$msg');history.go(-1);</script>");
-	} else {
-		exit("<script>alert('$msg');location.href='$url';</script>");
+function success_message($message) {
+	$url = "";
+	$status = 0;
+	$data = array();
+	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : false;
+
+	foreach (array_slice(func_get_args(), 1) as $arg) {
+		switch (gettype($arg)) {
+			case "string":
+				$url = $arg;
+				break;
+			case "integer":
+				$status = $arg;
+				break;
+			case "array":
+				$data = $arg;
+				break;
+			case "boolean":
+				$is_alert = $arg;
+				break;
+		}
+	}
+
+	if (!empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest") {
+		header("Content-Type: application/json; charset=utf-8");
+		$resp = compact("status", "message");
+		if (!empty($data)) {
+			$resp["data"] = $data;
+		}
+		exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
+	}else {
+		header("Content-Type: text/html; charset=utf-8");
+		$alert = $is_alert ? "alert('$message');" : "";
+		if (!empty($url)) {
+			exit("<div>{$alert}location.href='$url';</div>");
+		}
+		if (!empty($_SERVER["HTTP_REFERER"])) {
+			exit("<div>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</div>");
+		}
+		exit("<div>{$alert}history.back();</div>");
 	}
 }
 
 /**
- * 显示错误消息
- * @param string $msg
- * @param string $url
- * @return array
+ * 错误消息
+ *
+ * error_message 函数会根据是否Ajax请求响应不同的数据内容,除了第
+ * 一个参数为提示消息,之后的其他参数可以不按照顺序呢传参,函数会根据参
+ * 数的类型调整参数是跳转到的url,还是消息状态码或消息的数据
+ *
+ * @param string $message 消息内容
+ * @param string $url 跳转到的url
+ * @param integer $status 状态码
+ * @param array $data 消息的数据
+ * @param boolean $is_alert 是否显示信息
  */
-function error_message($msg, $url = "") {
-	header("Content-Type: text/html; charset=utf-8");
-	if (empty($url)) {
-		exit("<script>alert('$msg');history.go(-1);</script>");
-	} else {
-		exit("<script>alert('$msg');location.href='$url';</script>");
+function error_message($message) {
+	$url = "";
+	$status = 1;
+	$data = array();
+	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : true;
+
+	foreach (array_slice(func_get_args(), 1) as $arg) {
+		switch (gettype($arg)) {
+			case "string":
+				$url = $arg;
+				break;
+			case "integer":
+				$status = $arg;
+				break;
+			case "array":
+				$data = $arg;
+				break;
+			case "boolean":
+				$is_alert = $arg;
+				break;
+		}
+	}
+
+	if (!empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest") {
+		header("Content-Type: application/json; charset=utf-8");
+		$resp = compact("status", "message");
+		if (!empty($data)) {
+			$resp["data"] = $data;
+		}
+		exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
+	}else {
+		header("Content-Type: text/html; charset=utf-8");
+		$alert = $is_alert ? "alert('$message');" : "";
+		if (!empty($url)) {
+			exit("<div>{$alert}location.href='$url';</div>");
+		}
+		exit("<div>{$alert}history.back();</div>");
 	}
 }
 
