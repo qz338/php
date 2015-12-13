@@ -18,7 +18,7 @@ function is_post() {
  * @param string $from
  * @return data
  */
-function form_data($names, array $from = array()) {
+function form_data($names, array &$from = array()) {
 	$names = array_map("trim", explode(",", $names));
 	$from = empty($from) ? $_POST : $from;
 	$data = array();

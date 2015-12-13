@@ -239,13 +239,16 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function update(array $data) {
+		if (empty($this->_wheres)) {
+			throw new Exception("WHERE is empty!");
+		}
 		$sets = array();
 		$params = array();
 		foreach ($data as $col => $val) {
 			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		$wheres = " WHERE ".implode(" AND ", $this->_wheres);
 		$sql = sprintf("UPDATE `%s` SET %s%s", $this->_table, implode(", ", $sets), $wheres);
 		$params = array_merge($params, $this->_wheres_params);
 		return $this->vquery($sql, $params);
@@ -271,8 +274,14 @@ class Table {
 	 * 删除数据
 	 * @return PDOStatement
 	 */
-	public function delete() {
-		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+	public function delete($id = 0) {
+		if (!empty($id)) {
+			$this->where(sprintf("%s = ?", $this->pk), $id);
+		}
+		if (empty($this->_wheres)) {
+			throw new Exception("WHERE is empty!");
+		}
+		$wheres = " WHERE ".implode(" AND ", $this->_wheres);
 		$sql = sprintf("DELETE FROM `%s`%s", $this->_table, $wheres);
 		return $this->vquery($sql, $this->_wheres_params);
 	}
@@ -520,7 +529,10 @@ class Table {
 			$sets[] = sprintf("`%s` = `%s` + ?", $col, $col);
 			$vals[] = $val;
 		}
-		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		if (empty($this->_wheres)) {
+			throw new Exception("WHERE is empty!");
+		}
+		$wheres = " WHERE ".implode(" AND ", $this->_wheres);
 		$sql = sprintf("UPDATE `%s` SET %s%s", $this->_table, implode(", ", $sets), $wheres);
 		$params = array_merge($vals, $this->_wheres_params);
 		$this->vquery($sql, $params);
@@ -534,7 +546,10 @@ class Table {
 	 * @return int
 	 */
 	public function incr($col, $val = 1) {
-		$wheres = empty($this->_wheres) ? " WHERE 0" : " WHERE ".implode(" AND ", $this->_wheres);
+		if (empty($this->_wheres)) {
+			throw new Exception("WHERE is empty!");
+		}
+		$wheres = " WHERE ".implode(" AND ", $this->_wheres);
 		$sql = sprintf("UPDATE `%s` SET `%s` = last_insert_id(`%s` + ?)%s", $this->_table, $col, $col, $wheres);
 		$params = array_merge(array($val), $this->_wheres_params);
 		$this->vquery($sql, $params);

@@ -25,7 +25,7 @@ include "Table.php";
 
 Table::$__host = "127.0.0.1";
 Table::$__user = "root";
-Table::$__password = "";
+Table::$__password = "123456";
 Table::$__dbname = "test";
 Table::$__charset = "utf8";
 
