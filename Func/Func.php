@@ -303,3 +303,18 @@ function json_message($status, $message, $data = array()) {
 	}
 	exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
 }
+
+/**
+ * 过滤表单html元素
+ * @param array $data
+ * @return array
+ */
+function filter_html(&$data) {
+	foreach ($data as $k => &$v) {
+		if (is_array($v)) {
+			filter_html($v);
+		} else {
+			$v = strip_tags($v);
+		}
+	}
+}
