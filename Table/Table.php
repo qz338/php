@@ -125,6 +125,9 @@ class Table {
 	 * @return PDOStatement
 	 */
 	public function vquery($sql, array $params = array()) {
+		if (strpos($sql, "'") !== false) {
+			throw new Exception(sprintf("a ha ha ha ha ha ha! sql error: %s", $sql));
+		}
 		$stmt = $this->getPDO()->prepare($sql);
 		foreach ($params as $i => $param) {
 			$stmt->bindValue($i+1, $param, $this->getParamType($param));
