@@ -1,4 +1,1 @@
-<?php
-$data = $vars;
-?>
-<div><?php echo $data["copyright"]; ?></div>
+<div><?php echo htmlspecialchars($data["copyright"]); ?></div>

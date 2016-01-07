@@ -31,7 +31,7 @@
 <div>
 	<table>
 {{range $data["books"] as $i => $row}}
-{{#$data = $row}}
+{{code $data = $row}}
 		<tr>
 			<td>{{.id}}</td>
 			<td>{{.name}}</td>

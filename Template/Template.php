@@ -22,7 +22,7 @@ class Template {
 		$text = preg_replace("/\\\\/", 							"\\\\",												$text);
 		// $text = preg_replace("/\'/", 						"\\'",												$text);
 
-		$text = preg_replace('/{{\/\*(.+?)\*\/}}/', 			'', 												$text);
+		$text = preg_replace('/{{(\/\*(.+?)\*\/)}}/', 			'<?php $1 ?>', 										$text);
 		$text = preg_replace('/{{if \.(.+?)}}/', 				'<?php if (!empty($data["$1"])) { ?>', 				$text);
 		$text = preg_replace('/{{if (.+?)}}/', 					'<?php if ($1) { ?>', 								$text);
 		$text = preg_replace('/{{else}}/', 						'<?php } else { ?>', 								$text);
@@ -35,11 +35,13 @@ class Template {
 		$text = preg_replace('/{{template (\S+?)}}/', 			'<?php $this->render("$1", $vars); ?>', 			$text);
 		$text = preg_replace('/{{template (\S+?) \.(.+?)}}/', 	'<?php $this->render("$1", $data["$2"]); ?>', 		$text);
 		$text = preg_replace('/{{template (\S+?) (.+?)}}/', 	'<?php $this->render("$1", $2); ?>', 				$text);
-		$text = preg_replace('/{{#(.+?)}}/', 					'<?php $1; ?>', 									$text);
-		$text = preg_replace('/{{\.(.+?)}}/', 					'<?php echo $data["$1"]; ?>', 						$text);
-		$text = preg_replace('/{{(.+?)}}/', 					'<?php echo $1; ?>', 								$text);
+		$text = preg_replace('/{{code (.+?)}}/', 				'<?php $1; ?>', 									$text);
+		$text = preg_replace('/{{html \.(.+?)}}/', 				'<?php echo $data["$1"]; ?>', 						$text);
+		$text = preg_replace('/{{html (.+?)}}/', 				'<?php echo $1; ?>', 								$text);
+		$text = preg_replace('/{{\.(.+?)}}/', 					'<?php echo htmlspecialchars($data["$1"]); ?>', 	$text);
+		$text = preg_replace('/{{(.+?)}}/', 					'<?php echo htmlspecialchars($1); ?>', 				$text);
 		
-		$text = preg_replace("/\n+/", 							"\n",												$text);
+		// $text = preg_replace("/\n+/", 						"\n",												$text);
 
 		return $text;
 	}

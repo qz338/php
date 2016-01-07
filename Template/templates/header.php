@@ -1,4 +1,1 @@
-<?php
-$data = $vars;
-?>
-<div><?php echo $data["title"]; ?></div>
+<div><?php echo htmlspecialchars($data["title"]); ?></div>
