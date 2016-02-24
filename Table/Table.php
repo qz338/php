@@ -168,8 +168,8 @@ class Table {
 		$groups = empty($this->_groups) ? "" : " GROUP BY ".implode(", ", $this->_groups);
 		$havings = empty($this->_havings) ? "" : " HAVING ".implode(" AND ", $this->_havings);
 		$orders = empty($this->_orders) ? "" : " ORDER BY ".implode(", ", $this->_orders);
-		$limit = isset($this->_limit) ? "" : " LIMIT ?";
-		$offset = isset($this->_offset) ? "" : " OFFSET ?";
+		$limit = !isset($this->_limit) ? "" : " LIMIT ?";
+		$offset = !isset($this->_offset) ? "" : " OFFSET ?";
 		$forUpdate = $this->_for_update;
 		$lockInShareMode = $this->_lock_in_share_mode;
 		$sql = sprintf("SELECT%s %s FROM `%s`%s%s%s%s%s%s%s%s%s", $keywords, $columns, $table, $joins, $wheres, $groups, $havings, $orders, $limit, $offset, $forUpdate, $lockInShareMode);
