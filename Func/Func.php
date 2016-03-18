@@ -15,16 +15,85 @@ function is_post() {
 /**
  * 获取提交的数据
  * @param string $names
- * @param string $from
+ * @param array $form
  * @return data
  */
-function form_data($names, array &$from = array()) {
+function form_data($names, array &$form = array()) {
 	$names = array_map("trim", explode(",", $names));
-	$from = empty($from) ? $_POST : $from;
+	$form = empty($form) ? $_POST : $form;
 	$data = array();
 	foreach ($names as $name) {
-		$data[$name] = $from[$name];
+		$data[$name] = $form[$name];
 	}
+	return $data;
+}
+
+/**
+ * 验证表单数据
+ * @param string $names
+ * @param array $verifys
+ * @param array $form
+ * @return data
+ */
+function form_verify($names, $verifys, array &$form = array()) {
+	$names = array_map("trim", explode(",", $names));
+	$form = empty($form) ? $_POST : $form;
+	$data = array();
+	$errors = array();
+	foreach ($names as $name) {
+		// 规则
+		if (!isset($verifys[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("表单验证规则%s不存在!", $name));
+			continue;
+		}
+		$verify = $verifys[$name];
+
+		// 必填
+		if ($verify["required"] && !isset($form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s不能为空!", $verify["comment"]));
+			continue;
+		}
+
+		// 类型检查
+		if ($verify["type"] == "int" && !is_numeric($form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+			continue;
+		} elseif ($verify["type"] == "float" && !is_numeric($form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+			continue;
+		} elseif ($verify["type"] == "string" && !is_string($form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+			continue;
+		} elseif ($verify["type"] == "array" && !is_array($form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+			continue;
+		}
+
+		// 格式匹配
+		if (!empty($verify["pattern"]) && !preg_match($verify["pattern"], $form[$name])) {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s格式不正确!", $verify["comment"]));
+			continue;
+		}
+
+		// 类型转换
+		if ($verify["type"] == "int") {
+			$data[$name] = intval($form[$name]);
+		} elseif ($verify["type"] == "float") {
+			$data[$name] = floatval($form[$name]);
+		} elseif ($verify["type"] == "string") {
+			$data[$name] = $form[$name];
+		} elseif ($verify["type"] == "array") {
+			$data[$name] = $form[$name];
+		} else {
+			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型转换未知!", $verify["comment"]));
+			continue;
+		}
+	}
+
+	if (!empty($errors)) {
+		error_message("表单验证失败!", $errors);
+	}
+
 	return $data;
 }
 
