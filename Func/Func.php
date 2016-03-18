@@ -221,17 +221,27 @@ function success_message($message) {
 		if (!empty($data)) {
 			$resp["data"] = $data;
 		}
+		if (defined("DEVEL") && DEVEL) {
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$resp["file"] = $d["file"];
+			$resp["line"] = $d["line"];
+		}
 		exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
 	}else {
 		header("Content-Type: text/html; charset=utf-8");
+		if (defined("DEVEL") && DEVEL) {
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			header("file: {$d["file"]}");
+			header("line: {$d["line"]}");
+		}
 		$alert = $is_alert ? "alert('$message');" : "";
 		if (!empty($url)) {
-			exit("<div>{$alert}location.href='$url';</div>");
+			exit("<script>{$alert}location.href='$url';</script>");
 		}
 		if (!empty($_SERVER["HTTP_REFERER"])) {
-			exit("<div>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</div>");
+			exit("<script>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</script>");
 		}
-		exit("<div>{$alert}history.back();</div>");
+		exit("<script>{$alert}history.back();</script>");
 	}
 }
 
@@ -277,14 +287,24 @@ function error_message($message) {
 		if (!empty($data)) {
 			$resp["data"] = $data;
 		}
+		if (defined("DEVEL") && DEVEL) {
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$resp["file"] = $d["file"];
+			$resp["line"] = $d["line"];
+		}
 		exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
 	}else {
 		header("Content-Type: text/html; charset=utf-8");
+		if (defined("DEVEL") && DEVEL) {
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			header("file: {$d["file"]}");
+			header("line: {$d["line"]}");
+		}
 		$alert = $is_alert ? "alert('$message');" : "";
 		if (!empty($url)) {
-			exit("<div>{$alert}location.href='$url';</div>");
+			exit("<script>{$alert}location.href='$url';</script>");
 		}
-		exit("<div>{$alert}history.back();</div>");
+		exit("<script>{$alert}history.back();</script>");
 	}
 }
 
@@ -300,6 +320,11 @@ function json_message($status, $message, $data = array()) {
 	$resp = compact("status", "message");
 	if (!empty($data)) {
 		$resp["data"] = $data;
+	}
+	if (defined("DEVEL") && DEVEL) {
+		$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+		$resp["file"] = $d["file"];
+		$resp["line"] = $d["line"];
 	}
 	exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
 }
