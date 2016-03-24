@@ -203,7 +203,7 @@ class Table {
 		$sql = sprintf("INSERT `%s` SET %s", $this->_table, implode(", ", $sets));
 		return $this->vquery($sql, $params);
 	}
-	
+
 	/**
 	 * 批量插入数据
 	 * @param array $columns
@@ -211,26 +211,21 @@ class Table {
 	 * @param number $batch
 	 * @return Table
 	 */
-	public function batchInsert(array $columns, array $rows, $batch=1000) {
-		$value = "(?".str_repeat(",?", count($columns)-1).")";
-		$columns = implode("`,`", $columns);
-		$values = array();
+	public function batchInsert(array $columns, array $rows, $batch = 1000) {
+		$column = implode("`,`", $columns);
+		$value = ",(?".str_repeat(",?", count($columns)-1).")";
 		$params = array();
-		$i = 0;
-		foreach ($rows as $row) {
-			$values[] = $value;
-			$params = array_merge($params, $row);
-			$i++;
-			if ($i >= $batch) {
-				$sql = sprintf("INSERT `%s` (`%s`) VALUES %s", $this->_table, $columns, implode(",", $values));
+		$len = count($rows);
+		for ($i = 0; i < $len; $i++) {
+			$params = array_merge($params, $rows[$i]);
+			if (($i + 1) % $batch == 0) {
+				$sql = sprintf("INSERT `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $batch - 1));
 				$this->vquery($sql, $params);
-				$i = 0;
-				$values = array();
 				$params = array();
 			}
 		}
-		if ($i > 0) {
-			$sql = sprintf("INSERT `%s` (`%s`) VALUES %s", $this->_table, $columns, implode(",", $values));
+		if ($len % $batch > 0) {
+			$sql = sprintf("INSERT `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $len % $batch - 1));
 			$this->vquery($sql, $params);
 		}
 		return $this;
