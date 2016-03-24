@@ -200,7 +200,7 @@ class Table {
 			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$sql = sprintf("INSERT `%s` SET %s", $this->_table, implode(", ", $sets));
+		$sql = sprintf("INSERT INTO `%s` SET %s", $this->_table, implode(", ", $sets));
 		return $this->vquery($sql, $params);
 	}
 
@@ -219,13 +219,13 @@ class Table {
 		for ($i = 0; i < $len; $i++) {
 			$params = array_merge($params, $rows[$i]);
 			if (($i + 1) % $batch == 0) {
-				$sql = sprintf("INSERT `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $batch - 1));
+				$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $batch - 1));
 				$this->vquery($sql, $params);
 				$params = array();
 			}
 		}
 		if ($len % $batch > 0) {
-			$sql = sprintf("INSERT `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $len % $batch - 1));
+			$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $len % $batch - 1));
 			$this->vquery($sql, $params);
 		}
 		return $this;
@@ -264,7 +264,7 @@ class Table {
 			$sets[] = sprintf("`%s` = ?", $col);
 			$params[] = $val;
 		}
-		$sql = sprintf("REPLACE `%s` SET %s", $this->_table, implode(", ", $sets));
+		$sql = sprintf("REPLACE INTO `%s` SET %s", $this->_table, implode(", ", $sets));
 		return $this->vquery($sql, $params);
 	}
 
