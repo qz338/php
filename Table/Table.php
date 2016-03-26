@@ -424,7 +424,7 @@ class Table {
 	 * @return Table
 	 */
 	public function limit($limit) {
-		$this->_limit = $limit;
+		$this->_limit = intval($limit);
 		return $this;
 	}
 
@@ -434,7 +434,7 @@ class Table {
 	 * @return Table
 	 */
 	public function offset($offset) {
-		$this->_offset = $offset;
+		$this->_offset = intval($offset);
 		return $this;
 	}
 
@@ -487,6 +487,8 @@ class Table {
 	 * @return Table
 	 */
 	public function page($page, $pagesize = 15) {
+		$page = intval($page);
+		$pagesize = intval($pagesize);
 		$this->_limit = $pagesize;
 		$this->_offset = ($page - 1) * $pagesize;
 		return $this;

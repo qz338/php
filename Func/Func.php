@@ -55,6 +55,12 @@ function form_data($names, array &$form = null, $return_errors = false) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
 		}
+		// 类型转换
+		if ($type == "i") {
+			$value = intval($value);
+		} elseif ($type == "f") {
+			$value = doubleval($value);
+		}
 		// 检查通过
 		$data[$name] = $value;
 	}
@@ -63,7 +69,7 @@ function form_data($names, array &$form = null, $return_errors = false) {
 		return array($data, $return_errors);
 	} else {
 		if (!empty($errors)) {
-			error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors);
+			error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors, 1.1);
 		}
 		return $data;
 	}
@@ -238,6 +244,7 @@ function success_message($message) {
 	$status = 0;
 	$data = array();
 	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : false;
+	$trace = 0;
 
 	foreach (array_slice(func_get_args(), 1) as $arg) {
 		switch (gettype($arg)) {
@@ -252,6 +259,9 @@ function success_message($message) {
 				break;
 			case "boolean":
 				$is_alert = $arg;
+				break;
+			case "double":
+				$trace = intval($arg);
 				break;
 		}
 	}
@@ -269,7 +279,7 @@ function success_message($message) {
 			$resp["data"] = $data;
 		}
 		if (defined("DEVEL") && DEVEL) {
-			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[$trace];
 			$resp["file"] = $d["file"];
 			$resp["line"] = $d["line"];
 		}
@@ -277,7 +287,7 @@ function success_message($message) {
 	}else {
 		header("Content-Type: text/html; charset=utf-8");
 		if (defined("DEVEL") && DEVEL) {
-			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[$trace];
 			header("file: {$d["file"]}");
 			header("line: {$d["line"]}");
 		}
@@ -310,6 +320,7 @@ function error_message($message) {
 	$status = 1;
 	$data = array();
 	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : true;
+	$trace = 0;
 
 	foreach (array_slice(func_get_args(), 1) as $arg) {
 		switch (gettype($arg)) {
@@ -325,6 +336,9 @@ function error_message($message) {
 			case "boolean":
 				$is_alert = $arg;
 				break;
+			case "double":
+				$trace = intval($arg);
+				break;
 		}
 	}
 
@@ -335,7 +349,7 @@ function error_message($message) {
 			$resp["data"] = $data;
 		}
 		if (defined("DEVEL") && DEVEL) {
-			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[$trace];
 			$resp["file"] = $d["file"];
 			$resp["line"] = $d["line"];
 		}
@@ -343,7 +357,7 @@ function error_message($message) {
 	}else {
 		header("Content-Type: text/html; charset=utf-8");
 		if (defined("DEVEL") && DEVEL) {
-			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1)[0];
+			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[$trace];
 			header("file: {$d["file"]}");
 			header("line: {$d["line"]}");
 		}
@@ -374,6 +388,18 @@ function json_message($status, $message, $data = array()) {
 		$resp["line"] = $d["line"];
 	}
 	exit(json_encode($resp, JSON_UNESCAPED_UNICODE));
+}
+
+/**
+ * 检测变量是否为空
+ * @param string $value
+ * @param string $message
+ * @return array
+ */
+function check_null(&$value, $message = "参数错误!") {
+	if (empty($value)) {
+		error_message($message, 1.1);
+	}
 }
 
 /**
