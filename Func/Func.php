@@ -16,85 +16,57 @@ function is_post() {
  * 获取提交的数据
  * @param string $names
  * @param array $form
+ * @param string $return_errors
  * @return data
  */
-function form_data($names, array &$form = array()) {
+function form_data($names, array &$form = null, $return_errors = false) {
 	$names = array_map("trim", explode(",", $names));
-	$form = empty($form) ? $_POST : $form;
-	$data = array();
-	foreach ($names as $name) {
-		$data[$name] = $form[$name];
-	}
-	return $data;
-}
-
-/**
- * 验证表单数据
- * @param string $names
- * @param array $verifys
- * @param array $form
- * @return data
- */
-function form_verify($names, $verifys, array &$form = array()) {
-	$names = array_map("trim", explode(",", $names));
-	$form = empty($form) ? $_POST : $form;
+	$form = $form === null ? $_POST : $form;
 	$data = array();
 	$errors = array();
 	foreach ($names as $name) {
-		// 规则
-		if (!isset($verifys[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("表单验证规则%s不存在!", $name));
+		// 解析规则
+		list($name, $type, $defval, $pattern) = array_map("trim", explode(":", $name)) + array("", "s", "", "");
+		$required = ctype_lower($type);
+		// 默认值
+		$value = array_key_exists($name, $form) ? $form[$name] : $defval;
+		// 必填 但是没有填写
+		if ($required && $value === "") {
+			$errors[] = array("field" => $name, "message" => "%s不能为空!");
 			continue;
 		}
-		$verify = $verifys[$name];
-
-		// 必填
-		if ($verify["required"] && !isset($form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s不能为空!", $verify["comment"]));
+		// 填写了 格式检查
+		if ($value === "" && $pattern !== "" && !preg_match("/^".strtr("\0\1", ",:", $pattern)."$/", $value)) {
+			$errors[] = array("field" => $name, "message" => "%s格式不正确!");
 			continue;
 		}
-
 		// 类型检查
-		if ($verify["type"] == "int" && !is_numeric($form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+		$type = strtolower($type);
+		if ($type == "i" && !is_numeric($value)) {
+			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($verify["type"] == "float" && !is_numeric($form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+		} elseif ($type == "f" && !is_numeric($value)) {
+			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($verify["type"] == "string" && !is_string($form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
+		} elseif ($type == "s" && !is_string($value)) {
+			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($verify["type"] == "array" && !is_array($form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型不正确!", $verify["comment"]));
-			continue;
-		}
-
-		// 格式匹配
-		if (!empty($verify["pattern"]) && !preg_match($verify["pattern"], $form[$name])) {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s格式不正确!", $verify["comment"]));
+		} elseif ($type == "a" && !is_array($value)) {
+			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
 		}
-
-		// 类型转换
-		if ($verify["type"] == "int") {
-			$data[$name] = intval($form[$name]);
-		} elseif ($verify["type"] == "float") {
-			$data[$name] = floatval($form[$name]);
-		} elseif ($verify["type"] == "string") {
-			$data[$name] = $form[$name];
-		} elseif ($verify["type"] == "array") {
-			$data[$name] = $form[$name];
-		} else {
-			$errors[] = array("field" => $form[$name], "message" => sprintf("%s类型转换未知!", $verify["comment"]));
-			continue;
-		}
+		// 检查通过
+		$data[$name] = $value;
 	}
-
-	if (!empty($errors)) {
-		error_message("表单验证失败!", $errors);
+	// 检查是否有错误
+	if ($return_errors) {
+		return array($data, $return_errors);
+	} else {
+		if (!empty($errors)) {
+			error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors);
+		}
+		return $data;
 	}
-
-	return $data;
 }
 
 /**
@@ -103,14 +75,14 @@ function form_verify($names, $verifys, array &$form = array()) {
  */
 function redirect($url) {
 	header("Location: $url");
-	exit();
+	exit("Redirect <a href=\"$url\">$url</a>");
 }
 
 /**
  * 获得ip地址
  * @return number
  */
-function ip(){
+function ip() {
 	return ip2long($_SERVER["REMOTE_ADDR"]);
 }
 
@@ -120,14 +92,14 @@ function ip(){
  * @param number $i 多文件上传时的索引
  * @return bool
  */
-function is_upload($name, $index = null){
-	if (!(isset($_SERVER["HTTP_CONTENT_TYPE"]) && strpos($_SERVER["HTTP_CONTENT_TYPE"], "multipart/form-data")===0)) {
+function is_upload($name, $index = null) {
+	if (!(isset($_SERVER["HTTP_CONTENT_TYPE"]) && strpos($_SERVER["HTTP_CONTENT_TYPE"], "multipart/form-data") === 0)) {
 		exit('Upload: form error!<br />enctype="multipart/form-data"');
 	}
 	if (empty($_FILES[$name])) {
 		return false;
 	}
-	if ($index===null) {
+	if ($index === null) {
 		if ($_FILES[$name]["error"] !== 0) {
 			return false;
 		}
@@ -147,7 +119,7 @@ function is_upload($name, $index = null){
  * @param string $file 文件名
  * @return string
  */
-function extname($file){
+function extname($file) {
 	return strtolower(pathinfo($file, PATHINFO_EXTENSION));
 }
 
@@ -159,7 +131,7 @@ function extname($file){
 function random($len) {
 	$char = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	$str = "";
-	for ($i=0; $i<$len; $i++) {
+	for ($i = 0; $i < $len; $i++) {
 		$str .= $char{mt_rand(0, 61)};
 	}
 	return $str;
@@ -184,7 +156,7 @@ function today($offset = 28800) {
 function rows2tree($rows, $pid = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
-		if($pid == $row[$pkey]) {	
+		if($pid == $row[$pkey]) {
 			$row["tree"] = rows2tree($rows, $row[$key]);
 			$items[] = $row;
 		}
@@ -287,6 +259,12 @@ function success_message($message) {
 	if (!empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest") {
 		header("Content-Type: application/json; charset=utf-8");
 		$resp = compact("status", "message");
+		if ($is_alert) {
+			$resp["is_alert"] = $is_alert;
+		}
+		if (!empty($url)) {
+			$resp["url"] = $url;
+		}
 		if (!empty($data)) {
 			$resp["data"] = $data;
 		}
