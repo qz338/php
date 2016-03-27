@@ -42,16 +42,16 @@ function form_data($names, array &$form = null, $return_errors = false) {
 		}
 		// 类型检查
 		$type = strtolower($type);
-		if ($type == "i" && !is_numeric($value)) {
+		if (($required || $value !== "") && $type == "i" && !is_numeric($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($type == "f" && !is_numeric($value)) {
+		} elseif (($required || $value !== "") && $type == "f" && !is_numeric($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($type == "s" && !is_string($value)) {
+		} elseif (($required || $value !== "") && $type == "s" && !is_string($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif ($type == "a" && !is_array($value)) {
+		} elseif (($required || $value !== "") && $type == "a" && !is_array($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
 		}
@@ -66,7 +66,7 @@ function form_data($names, array &$form = null, $return_errors = false) {
 	}
 	// 检查是否有错误
 	if ($return_errors) {
-		return array($data, $return_errors);
+		return array($data, $errors);
 	} else {
 		if (!empty($errors)) {
 			error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors, 1.1);
@@ -292,13 +292,16 @@ function success_message($message) {
 			header("line: {$d["line"]}");
 		}
 		$alert = $is_alert ? "alert('$message');" : "";
+		if (!empty($url) && $url == "none") {
+			exit("<script>{$alert}</script>$message");
+		}
 		if (!empty($url)) {
-			exit("<script>{$alert}location.href='$url';</script>");
+			exit("<script>{$alert}location.href='$url';</script>$message");
 		}
 		if (!empty($_SERVER["HTTP_REFERER"])) {
-			exit("<script>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</script>");
+			exit("<script>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</script>$message");
 		}
-		exit("<script>{$alert}history.back();</script>");
+		exit("<script>{$alert}history.back();</script>$message");
 	}
 }
 
@@ -348,6 +351,15 @@ function error_message($message) {
 		if (!empty($data)) {
 			$resp["data"] = $data;
 		}
+		if ($is_alert) {
+			$resp["is_alert"] = $is_alert;
+		}
+		if (!empty($url)) {
+			$resp["url"] = $url;
+		}
+		if (!empty($data)) {
+			$resp["data"] = $data;
+		}
 		if (defined("DEVEL") && DEVEL) {
 			$d = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 3)[$trace];
 			$resp["file"] = $d["file"];
@@ -362,10 +374,16 @@ function error_message($message) {
 			header("line: {$d["line"]}");
 		}
 		$alert = $is_alert ? "alert('$message');" : "";
-		if (!empty($url)) {
-			exit("<script>{$alert}location.href='$url';</script>");
+		if (!empty($url) && $url == "none") {
+			exit("<script>{$alert}</script>$message");
 		}
-		exit("<script>{$alert}history.back();</script>");
+		if (!empty($url)) {
+			exit("<script>{$alert}location.href='$url';</script>$message");
+		}
+		if (!empty($_SERVER["HTTP_REFERER"])) {
+			exit("<script>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</script>$message");
+		}
+		exit("<script>{$alert}history.back();</script>$message");
 	}
 }
 

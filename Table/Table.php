@@ -216,16 +216,16 @@ class Table {
 		$value = ",(?".str_repeat(",?", count($columns)-1).")";
 		$params = array();
 		$len = count($rows);
-		for ($i = 0; i < $len; $i++) {
+		for ($i = 0; $i < $len; $i++) {
 			$params = array_merge($params, $rows[$i]);
 			if (($i + 1) % $batch == 0) {
-				$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $batch - 1));
+				$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $column, substr($value, 1), str_repeat($value, $batch - 1));
 				$this->vquery($sql, $params);
 				$params = array();
 			}
 		}
 		if ($len % $batch > 0) {
-			$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $columns, substr($value, 1), str_repeat($value, $len % $batch - 1));
+			$sql = sprintf("INSERT INTO `%s` (`%s`) VALUES %s%s", $this->_table, $column, substr($value, 1), str_repeat($value, $len % $batch - 1));
 			$this->vquery($sql, $params);
 		}
 		return $this;
