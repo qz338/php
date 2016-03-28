@@ -380,9 +380,6 @@ function error_message($message) {
 		if (!empty($url)) {
 			exit("<script>{$alert}location.href='$url';</script>$message");
 		}
-		if (!empty($_SERVER["HTTP_REFERER"])) {
-			exit("<script>{$alert}location.href='{$_SERVER["HTTP_REFERER"]}';</script>$message");
-		}
 		exit("<script>{$alert}history.back();</script>$message");
 	}
 }
