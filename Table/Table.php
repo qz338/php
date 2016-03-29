@@ -129,12 +129,12 @@ class Table {
 		if (strpos($sql, "'") !== false) {
 			throw new Exception("a ha ha ha ha ha ha!");
 		}
+		if ($this->debug) {
+			var_dump($sql, $params);
+		}
 		$stmt = $this->getPDO()->prepare($sql);
 		foreach ($params as $i => $param) {
 			$stmt->bindValue($i + 1, $param, $this->getParamType($param));
-		}
-		if ($this->debug) {
-			var_dump($sql, $params);
 		}
 		$this->reset();
 		$stmt->executeResult = $stmt->execute();

@@ -155,15 +155,21 @@ function today($offset = 28800) {
  * 对树结构递归，禅城层次
  * @param array $rows
  * @param number $pid
+ * @param number $skip
+ * @param number $floor
  * @param string $key
  * @param string $pkey
  * @return array
 */
-function rows2tree($rows, $pid = 0, $key = "id", $pkey = "pid") {
+function rows2tree($rows, $pid = 0, $skip = 0, $floor = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
+		if ($row[$key] == $skip) {
+			continue;
+		}
 		if($pid == $row[$pkey]) {
-			$row["tree"] = rows2tree($rows, $row[$key]);
+			$row["floor"] = $floor;
+			$row["tree"] = rows2tree($rows, $row[$key], $skip, $floor + 1, $key, $pkey);
 			$items[] = $row;
 		}
 	}
@@ -174,18 +180,22 @@ function rows2tree($rows, $pid = 0, $key = "id", $pkey = "pid") {
  * 对树结构排序，添加floor层次
  * @param array $rows
  * @param number $pid
+ * @param number $skip
  * @param number $floor
  * @param string $key
  * @param string $pkey
  * @return array
  */
-function rows2floor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
+function rows2floor($rows, $pid = 0, $skip = 0, $floor = 0, $key = "id", $pkey = "pid") {
 	$items = array();
 	foreach ($rows as $row) {
+		if ($row[$key] == $skip) {
+			continue;
+		}
 		if($pid == $row[$pkey]) {
 			$row["floor"] = $floor;
 			$items[] = $row;
-			$items = array_merge($items, rows2floor($rows, $row[$key], $floor+1));
+			$items = array_merge($items, rows2floor($rows, $row[$key], $skip, $floor + 1, $key, $pkey));
 		}
 	}
 	return $items;
@@ -194,14 +204,23 @@ function rows2floor($rows, $pid = 0, $floor = 0, $key = "id", $pkey = "pid") {
 /**
  * select option 辅助函数
  * @param array $options
- * @param string $val
+ * @param string $defval
+ * @param string $id
+ * @param string $name
+ * @param string $attrs
  * @return array
  */
-function select_options($options, $val = -1) {
+function select_options(array $options, $defval = -1, $id = "id", $name = "name", $attrs = "") {
 	$html = "";
-	foreach ($options as $key => $value) {
-		$selected = $val == $key ? ' selected="selected"' : '';
-		$html .= sprintf('<option value="%s"%s>%s</option>%s', $key, $selected, $value, "\n");
+	foreach ($options as $value => $text) {
+		if (is_array($text)) {
+			$attrs = is_callable($attrs) ? $attrs($text) : $attrs;
+			$attrs = (isset($text["level"]) ? sprintf(' data-level="%d"', $text["level"]) : "") . $attrs;
+			$value = $text[$id];
+			$text = (isset($text["floor"]) ? str_repeat("--", $text["floor"]) : "") . $text[$name];
+		}
+		$selected = $value == $defval ? ' selected="selected"' : "";
+		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $value, $selected, $attrs, $text, "\n");
 	}
 	return $html;
 }
