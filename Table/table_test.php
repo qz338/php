@@ -1,6 +1,7 @@
 <?php
 // 数据库表结构
-/*
+$table_sql = <<< EOF
+DROP TABLE IF EXISTS `table_user`;
 CREATE TABLE `table_user` (
 `id` int(11) NOT NULL AUTO_INCREMENT,
 `username` varchar(45) NOT NULL,
@@ -10,13 +11,14 @@ CREATE TABLE `table_user` (
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `table_blog`;
 CREATE TABLE `table_blog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `title` varchar(45) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-*/
+EOF;
 
 // 初始化
 header("Content-Type: text/html; charset=utf-8");
@@ -36,6 +38,9 @@ $blogTable = new Table("table_blog", "b");
 // 开启调试模式
 $userTable->debug = true;
 $blogTable->debug = true;
+
+// 初始化数据库
+$userTable->getPDO()->exec($table_sql);
 
 // sql查询
 $sql = "select * from table_user where id > ? and id < ?";

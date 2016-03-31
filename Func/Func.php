@@ -26,53 +26,53 @@ function form_data($names, array &$form = null, $return_errors = false) {
 	$errors = array();
 	foreach ($names as $name) {
 		// 解析规则
-		list($name, $type, $defval, $pattern) = array_map("trim", explode(":", $name)) + array("", "s", "", "");
+		list($name, $type, $defval, $pattern) = array_map("trim", explode(":", $name)) + array("", "s", null, null);
 		$required = ctype_lower($type);
 		// 默认值
-		$value = array_key_exists($name, $form) ? $form[$name] : $defval;
+		$value = array_key_exists($name, $form) && $form[$name] !== "" ? $form[$name] : $defval;
 		// 必填 但是没有填写
-		if ($required && $value === "") {
+		if ($required && $value === null) {
 			$errors[] = array("field" => $name, "message" => "%s不能为空!");
 			continue;
 		}
 		// 填写了 格式检查
-		if ($value === "" && $pattern !== "" && !preg_match("/^".strtr("\0\1", ",:", $pattern)."$/", $value)) {
+		if ($value !== null && $pattern !== null && $type !== "a" && !preg_match("/^" . strtr("\0\1", ",:", $pattern) . "$/", $value)) {
 			$errors[] = array("field" => $name, "message" => "%s格式不正确!");
 			continue;
 		}
 		// 类型检查
 		$type = strtolower($type);
-		if (($required || $value !== "") && $type == "i" && !is_numeric($value)) {
+		if ($value !== null && $type == "i" && !is_numeric($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif (($required || $value !== "") && $type == "f" && !is_numeric($value)) {
+		} elseif ($value !== null && $type == "f" && !is_numeric($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif (($required || $value !== "") && $type == "s" && !is_string($value)) {
+		} elseif ($value !== null && $type == "s" && !is_string($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
-		} elseif (($required || $value !== "") && $type == "a" && !is_array($value)) {
+		} elseif ($value !== null && $type == "a" && !is_array($value)) {
 			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
 			continue;
 		}
 		// 类型转换
-		if ($type == "i") {
+		if ($value !== null && $type == "i") {
 			$value = intval($value);
-		} elseif ($type == "f") {
+		} elseif ($value !== null && $type == "f") {
 			$value = doubleval($value);
 		}
 		// 检查通过
 		$data[$name] = $value;
 	}
-	// 检查是否有错误
+	// 是否返回错误
 	if ($return_errors) {
 		return array($data, $errors);
-	} else {
-		if (!empty($errors)) {
-			error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors, 1.1);
-		}
-		return $data;
 	}
+	// 检查是否有错误
+	if (!empty($errors)) {
+		error_message($_SERVER["REQUEST_METHOD"] == "POST" ? "表单填写有误!" : "参数错误!", $errors, 1.1);
+	}
+	return $data;
 }
 
 /**
