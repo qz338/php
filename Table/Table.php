@@ -248,8 +248,13 @@ class Table {
 			$params[] = $val;
 		}
 		$wheres = " WHERE " . implode(" AND ", $this->_wheres);
-		$sql = sprintf("UPDATE `%s` SET %s%s", $this->_table, implode(", ", $sets), $wheres);
+		$orders = empty($this->_orders) ? ""  : " ORDER BY " . implode(", ", $this->_orders);
+		$limit 	= !isset($this->_limit) ? ""  : " LIMIT ?";
+		$sql = sprintf("UPDATE `%s` SET %s%s%s%s", $this->_table, implode(", ", $sets), $wheres, $orders, $limit);
 		$params = array_merge($params, $this->_wheres_params);
+		if (isset($this->_limit)) {
+			$params[] = $this->_limit;
+		}
 		return $this->vquery($sql, $params);
 	}
 
@@ -281,8 +286,14 @@ class Table {
 			throw new Exception("WHERE is empty!");
 		}
 		$wheres = " WHERE " . implode(" AND ", $this->_wheres);
-		$sql = sprintf("DELETE FROM `%s`%s", $this->_table, $wheres);
-		return $this->vquery($sql, $this->_wheres_params);
+		$orders = empty($this->_orders) ? ""  : " ORDER BY " . implode(", ", $this->_orders);
+		$limit 	= !isset($this->_limit) ? ""  : " LIMIT ?";
+		$sql = sprintf("DELETE FROM `%s`%s%s%s", $this->_table, $wheres, $orders, $limit);
+		$params = $this->_wheres_params;
+		if (isset($this->_limit)) {
+			$params[] = $this->_limit;
+		}
+		return $this->vquery($sql, $params);
 	}
 
 	/**

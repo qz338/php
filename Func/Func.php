@@ -13,6 +13,22 @@ function is_post() {
 }
 
 /**
+ * 提取数据
+ * @param string $names
+ * @param array $from
+ * @return data
+ */
+function from_data($names, array &$from = null) {
+	$names = array_map("trim", explode(",", $names));
+	$from = $from === null ? $_POST : $from;
+	$data = array();
+	foreach ($names as $name) {
+		$data[$name] = array_key_exists($name, $from) ? $from[$name] : null;
+	}
+	return $data;
+}
+
+/**
  * 获取提交的数据
  * @param string $names
  * @param array $form
@@ -214,13 +230,12 @@ function select_options(array $options, $defval = -1, $id = "id", $name = "name"
 	$html = "";
 	foreach ($options as $value => $text) {
 		if (is_array($text)) {
-			$attrs = is_callable($attrs) ? $attrs($text) : $attrs;
-			$attrs = (isset($text["level"]) ? sprintf(' data-level="%d"', $text["level"]) : "") . $attrs;
+			$attr = is_callable($attrs) ? $attrs($text) : $attrs;
 			$value = $text[$id];
 			$text = (isset($text["floor"]) ? str_repeat("--", $text["floor"]) : "") . $text[$name];
 		}
 		$selected = $value == $defval ? ' selected="selected"' : "";
-		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $value, $selected, $attrs, $text, "\n");
+		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $value, $selected, $attr, $text, "\n");
 	}
 	return $html;
 }
