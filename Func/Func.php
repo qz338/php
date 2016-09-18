@@ -43,32 +43,37 @@ function form_data($names, array &$form = null, $return_errors = false) {
 	foreach ($names as $name) {
 		// 解析规则
 		list($name, $type, $defval, $pattern) = array_map("trim", explode(":", $name)) + array("", "s", null, null);
+		$text = $name;
+		if (strlen($type) > 1) {
+			$type = substr($type, 0, 1);
+			$text = substr($type, 1);
+		}
 		$required = ctype_lower($type);
 		// 默认值
 		$value = array_key_exists($name, $form) && $form[$name] !== "" ? $form[$name] : $defval;
 		// 必填 但是没有填写
 		if ($required && $value === null) {
-			$errors[] = array("field" => $name, "message" => "%s不能为空!");
+			$errors[] = array("field" => $name, "message" => sprintf("%s不能为空!", $text));
 			continue;
 		}
 		// 填写了 格式检查
-		if ($value !== null && $pattern !== null && $type !== "a" && !preg_match("/^" . strtr("\0\1", ",:", $pattern) . "$/", $value)) {
-			$errors[] = array("field" => $name, "message" => "%s格式不正确!");
+		if ($value !== null && $pattern !== null && $type !== "a" && !preg_match("/^" . strtr($pattern, "\0\1", ",:") . "$/", $value)) {
+			$errors[] = array("field" => $name, "message" => sprintf("%s格式不正确!", $text));
 			continue;
 		}
 		// 类型检查
 		$type = strtolower($type);
 		if ($value !== null && $type == "i" && !is_numeric($value)) {
-			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
+			$errors[] = array("field" => $name, "message" => sprintf("%s类型不正确!", $text));
 			continue;
 		} elseif ($value !== null && $type == "f" && !is_numeric($value)) {
-			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
+			$errors[] = array("field" => $name, "message" => sprintf("%s类型不正确!", $text));
 			continue;
 		} elseif ($value !== null && $type == "s" && !is_string($value)) {
-			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
+			$errors[] = array("field" => $name, "message" => sprintf("%s类型不正确!", $text));
 			continue;
 		} elseif ($value !== null && $type == "a" && !is_array($value)) {
-			$errors[] = array("field" => $name, "message" => "%s类型不正确!");
+			$errors[] = array("field" => $name, "message" => sprintf("%s类型不正确!", $text));
 			continue;
 		}
 		// 类型转换
@@ -228,14 +233,15 @@ function rows2floor($rows, $pid = 0, $skip = 0, $floor = 0, $key = "id", $pkey =
  */
 function select_options(array $options, $defval = -1, $id = "id", $name = "name", $attrs = "") {
 	$html = "";
+	$callback = $attrs;
 	foreach ($options as $value => $text) {
 		if (is_array($text)) {
-			$attr = is_callable($attrs) ? $attrs($text) : $attrs;
+			$attrs = is_callable($callback) ? $callback($text) : $attrs;
 			$value = $text[$id];
 			$text = (isset($text["floor"]) ? str_repeat("--", $text["floor"]) : "") . $text[$name];
 		}
 		$selected = $value == $defval ? ' selected="selected"' : "";
-		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $value, $selected, $attr, $text, "\n");
+		$html .= sprintf('<option value="%s"%s%s>%s</option>%s', $value, $selected, $attrs, $text, "\n");
 	}
 	return $html;
 }
@@ -276,7 +282,7 @@ function post($key, $default = "") {
 function success_message($message) {
 	$url = "";
 	$status = 0;
-	$data = array();
+	$data = null;
 	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : false;
 	$trace = 0;
 
@@ -309,7 +315,7 @@ function success_message($message) {
 		if (!empty($url)) {
 			$resp["url"] = $url;
 		}
-		if (!empty($data)) {
+		if (isset($data)) {
 			$resp["data"] = $data;
 		}
 		if (defined("DEVEL") && DEVEL) {
@@ -355,7 +361,7 @@ function success_message($message) {
 function error_message($message) {
 	$url = "";
 	$status = 1;
-	$data = array();
+	$data = null;
 	$is_alert = defined("SHOW_MESSAGE_IS_ALERT") ? SHOW_MESSAGE_IS_ALERT : true;
 	$trace = 0;
 
@@ -382,16 +388,13 @@ function error_message($message) {
 	if (!empty($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest") {
 		header("Content-Type: application/json; charset=utf-8");
 		$resp = compact("status", "message");
-		if (!empty($data)) {
-			$resp["data"] = $data;
-		}
 		if ($is_alert) {
 			$resp["is_alert"] = $is_alert;
 		}
 		if (!empty($url)) {
 			$resp["url"] = $url;
 		}
-		if (!empty($data)) {
+		if (isset($data)) {
 			$resp["data"] = $data;
 		}
 		if (defined("DEVEL") && DEVEL) {
@@ -425,10 +428,10 @@ function error_message($message) {
  * @param array $data
  * @return array
  */
-function json_message($status, $message, $data = array()) {
+function json_message($status, $message, $data = null) {
 	header("Content-Type: application/json; charset=utf-8");
 	$resp = compact("status", "message");
-	if (!empty($data)) {
+	if (isset($data)) {
 		$resp["data"] = $data;
 	}
 	if (defined("DEVEL") && DEVEL) {
@@ -464,4 +467,13 @@ function filter_html(&$data) {
 			$v = strip_tags($v);
 		}
 	}
+}
+
+// 创建目录
+function mkdir2($filename) {
+	$dirname = dirname($filename);
+	if (!file_exists($dirname)) {
+		mkdir($dirname, 0755, true);
+	}
+	return $filename;
 }
