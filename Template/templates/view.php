@@ -23,7 +23,7 @@
 			<td><?php echo htmlspecialchars($data["price"]); ?></td>
 			<td><?php echo htmlspecialchars($data["cover"]); ?></td>
 		</tr>
-<?php $data = $vars; } ?>
+<?php $data = $_data; } ?>
 	</table>
 </div>
 
@@ -38,7 +38,7 @@
 			<td><?php echo htmlspecialchars($data["price"]); ?></td>
 			<td><?php echo htmlspecialchars($data["cover"]); ?></td>
 		</tr>
-<?php $data = $vars; } ?>
+<?php $data = $_data; } ?>
 	</table>
 </div>
 

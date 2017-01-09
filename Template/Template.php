@@ -7,7 +7,6 @@
 class Template {
 	public $source;
 	public $target;
-	public $prefix = "default";
 
 	function __construct($source = "templates", $target = "templates") {
 		$this->source = realpath($source);
@@ -21,7 +20,6 @@ class Template {
 		// $text = preg_replace("/\n+/", 						"",													$text);
 		$text = preg_replace("/\\\\/", 							"\\\\",												$text);
 		// $text = preg_replace("/\'/", 						"\\'",												$text);
-
 		$text = preg_replace('/{{(\/\*(.+?)\*\/)}}/', 			'<?php $1 ?>', 										$text);
 		$text = preg_replace('/{{if \.(.+?)}}/', 				'<?php if (!empty($data["$1"])) { ?>', 				$text);
 		$text = preg_replace('/{{if (.+?)}}/', 					'<?php if ($1) { ?>', 								$text);
@@ -31,8 +29,8 @@ class Template {
 		$text = preg_replace('/{{end}}/', 						'<?php } ?>', 										$text);
 		$text = preg_replace('/{{range \.(.+?)}}/', 			'<?php foreach ($data["$1"] as $i => $data) { ?>', 	$text);
 		$text = preg_replace('/{{range (.+?)}}/', 				'<?php foreach ($1) { ?>', 							$text);
-		$text = preg_replace('/{{endrange}}/', 					'<?php $data = $vars; } ?>', 						$text);
-		$text = preg_replace('/{{template (\S+?)}}/', 			'<?php $this->render("$1", $vars); ?>', 			$text);
+		$text = preg_replace('/{{endrange}}/', 					'<?php $data = $_data; } ?>', 						$text);
+		$text = preg_replace('/{{template (\S+?)}}/', 			'<?php $this->render("$1", $data); ?>', 			$text);
 		$text = preg_replace('/{{template (\S+?) \.(.+?)}}/', 	'<?php $this->render("$1", $data["$2"]); ?>', 		$text);
 		$text = preg_replace('/{{template (\S+?) (.+?)}}/', 	'<?php $this->render("$1", $2); ?>', 				$text);
 		$text = preg_replace('/{{code (.+?)}}/', 				'<?php $1; ?>', 									$text);
@@ -40,38 +38,32 @@ class Template {
 		$text = preg_replace('/{{html (.+?)}}/', 				'<?php echo $1; ?>', 								$text);
 		$text = preg_replace('/{{\.(.+?)}}/', 					'<?php echo htmlspecialchars($data["$1"]); ?>', 	$text);
 		$text = preg_replace('/{{(.+?)}}/', 					'<?php echo htmlspecialchars($1); ?>', 				$text);
-		
 		// $text = preg_replace("/\n+/", 						"\n",												$text);
-
 		return $text;
 	}
 
 	public function build($source, $target) {
 		$text = file_get_contents($source);
-
-		$prefix = "";
-		$suffix = "";
-		$text = $prefix . $this->parse($text) . $suffix;
-
+		$text = $this->parse($text);
 		file_put_contents($target, $text);
 	}
 
 	public function builds() {
-		$tpls = glob($this->source . "/*.tpl");
+		$tpls = glob("{$this->source}/*.tpl");
 		foreach ($tpls as $tpl) {
 			$name = pathinfo($tpl, PATHINFO_FILENAME);
-			$source = $this->source . "/" . $name . ".tpl";
-			$target = $this->target . "/" . $name . ".php";
+			$source = "{$this->source}/$name.tpl";
+			$target = "{$this->source}/$name.php";
 			$this->build($source, $target);
 		}
 	}
 
-	public function render($name, $vars) {
-		$filename = $this->target . "/" . $name . ".php";
+	public function render($name, $_data) {
+		$filename = "{$this->target}/$name.php";
 		if (!file_exists($filename)) {
-			return 'template ' + name + ' not found!';
+			return "template $name not found!";
 		}
-		$data = $vars;
+		$data = $_data;
 		require $filename;
 	}
 }
