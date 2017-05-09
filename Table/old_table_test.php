@@ -1,4 +1,7 @@
 <?php
+// 加载Table类
+require "old_Table.php";
+
 // 断言
 assert_options(ASSERT_ACTIVE, 1);
 assert_options(ASSERT_WARNING, 1);
@@ -28,9 +31,6 @@ EOF;
 // 初始化
 header("Content-Type: text/html; charset=utf-8");
 
-// 引入Table类
-include "old_Table.php";
-
 // 配置连接信息
 Table::$__dsn 		= "mysql:host=%s;dbname=%s;charset=%s;";
 Table::$__host 		= "127.0.0.1";
@@ -54,13 +54,7 @@ $blogTable->alias("b");
 $userTable->query("show tables")->fetchAll();
 
 // 初始化数据库
-if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-	foreach (array_filter(explode(";", $table_sql)) as $sql) {
-		Table::$__pdo->exec($sql);
-	}
-} else {
-	Table::$__pdo->exec($table_sql);
-}
+Table::$__pdo->exec($table_sql);
 
 // sql查询
 $sql = "SELECT * FROM table_user WHERE id > ? AND id < ?";
@@ -162,11 +156,7 @@ assert($userTable->_sql === "SELECT SQL_CALC_FOUND_ROWS * FROM `table_user` WHER
 assert(array_equal($userTable->_params, array(2, 3, 3)));
 
 // count
-if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-	assert($userTable->count() === "3");
-} else {
-	assert($userTable->count() === 3);
-}
+assert($userTable->count() === 3);
 // assert($userTable->_sql === "SELECT count(*) FROM `table_user` WHERE r = ?");
 // assert(array_equal($userTable->_params, array(3)));
 assert($userTable->_sql === "SELECT FOUND_ROWS()");
@@ -286,18 +276,10 @@ assert($blogTable->_sql === "SELECT * FROM `table_blog` WHERE id IN (?,?,?,?,?,?
 assert(array_equal($blogTable->_params, array(1, 12, 23, 34, 45, 56, 67, 78, 89, 99)));
 $userTable->foreignKey($blogs, "user_id", "*, id")->fetchAll(PDO::FETCH_UNIQUE); // 获取外表数据 关联数据
 assert($userTable->_sql === "SELECT *, id FROM `table_user` WHERE `id` IN (?,?,?,?,?,?,?,?,?,?)");
-if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-	assert(array_equal($userTable->_params, array("1", "2", "3", "5", "6", "7", "8", "9", "10", "12")));
-} else {
-	assert(array_equal($userTable->_params, array(1, 2, 3, 5, 6, 7, 8, 9, 10, 12)));
-}
+assert(array_equal($userTable->_params, array(1, 2, 3, 5, 6, 7, 8, 9, 10, 12)));
 $userTable->foreignKey($blogs, "user_id", "id, username")->fetchAll(PDO::FETCH_KEY_PAIR); // 获取外表数据 键值数据
 assert($userTable->_sql === "SELECT id, username FROM `table_user` WHERE `id` IN (?,?,?,?,?,?,?,?,?,?)");
-if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-	assert(array_equal($userTable->_params, array("1", "2", "3", "5", "6", "7", "8", "9", "10", "12")));
-} else {
-	assert(array_equal($userTable->_params, array(1, 2, 3, 5, 6, 7, 8, 9, 10, 12)));
-}
+assert(array_equal($userTable->_params, array(1, 2, 3, 5, 6, 7, 8, 9, 10, 12)));
 
 // PDO fetch 示例
 $userTable->select("*, id")->fetchAll(PDO::FETCH_UNIQUE); // 获取映射数据
@@ -308,14 +290,12 @@ $userTable->select("r, id")->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_COLUMN); // �
 $userTable->select("r, nickname")->fetchAll(PDO::FETCH_GROUP|PDO::FETCH_KEY_PAIR); // 获取数据分组
 $userTable->select()->fetchAll(PDO::FETCH_OBJ); // 获取对象 指定获取方式，将结果集中的每一行作为一个属性名对应列名的对象返回。
 $userTable->select()->fetchAll(PDO::FETCH_CLASS); // 获取对象 指定获取方式，返回一个所请求类的新实例，映射列到类中对应的属性名。 Note: 如果所请求的类中不存在该属性，则调用 __set() 魔术方法
-function callback_1($id, $username, $password, $r){ // 获取自定义行
+$userTable->select()->fetchAll(PDO::FETCH_FUNC, function($id, $username, $password, $r){ // 获取自定义行
 	return array("id"=>$id, "name"=>"$username - $password - $r");
-};
-$userTable->select()->fetchAll(PDO::FETCH_FUNC, "callback_1");
-function callback_2($id, $username, $password, $r){ //  获取单一值
+});
+$userTable->select()->fetchAll(PDO::FETCH_FUNC, function($id, $username, $password, $r){ //  获取单一值
 	return "$id - $username - $password - $r";
-}
-$userTable->select()->fetchAll(PDO::FETCH_FUNC, "callback_2");
+});
 
 function array_equal($a, $b) {
 	return serialize($a) === serialize($b);

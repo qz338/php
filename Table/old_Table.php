@@ -117,8 +117,7 @@ class Table {
 
 	// where查询条件
 	public function where($where) {
-		$args = func_get_args();
-		array_shift($args);
+		$args = array_slice(func_get_args(), 1);
 		$ws = explode("?", $where);
 		$where = array_shift($ws);
 		$params = array();
@@ -145,8 +144,7 @@ class Table {
 
 	// having过滤条件
 	public function having($having) {
-		$args = func_get_args();
-		array_shift($args);
+		$args = array_slice(func_get_args(), 1);
 		$ws = explode("?", $having);
 		$having = array_shift($ws);
 		$params = array();
@@ -231,8 +229,7 @@ class Table {
 
 	// sql查询
 	public function query($sql) {
-		$params = func_get_args();
-		array_shift($params);
+		$params = array_slice(func_get_args(), 1);
 		return $this->vquery($sql, $params);
 	}
 
@@ -415,9 +412,7 @@ class Table {
 
 	// 将选中行的指定字段加一
 	public function plus($col, $val = 1) {
-		$args = func_get_args();
-		array_shift($args);
-		array_shift($args);
+		$args = array_slice(func_get_args(), 2);
 		$sets = array(sprintf("`%s` = `%s` + ?", $col, $col));
 		$vals = array($val);
 		while (count($args) > 1) {
@@ -491,17 +486,17 @@ class Table {
 }
 
 if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-    function array_column(array &$rows, $column_key, $index_key = null) {
-        $data = array();
-        if (empty($index_key)) {
-            foreach ($rows as $row) {
-                $data[] = $row[$column_key];
-            }
-        } else {
-            foreach ($rows as $row) {
-                $data[$row[$index_key]] = $row[$column_key];
-            }
-        }
-        return $data;
-    }
+	function array_column(array &$rows, $column_key, $index_key = null) {
+		$data = array();
+		if (empty($index_key)) {
+			foreach ($rows as $row) {
+				$data[] = $row[$column_key];
+			}
+		} else {
+			foreach ($rows as $row) {
+				$data[$row[$index_key]] = $row[$column_key];
+			}
+		}
+		return $data;
+	}
 }
