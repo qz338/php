@@ -1,6 +1,6 @@
 <?php
 // author: dotcoo
-// link: http://www.dotcoo.com/php_debug
+// link: http://www.dotcoo.com/php_error_log
 
 function dotcoo_log($type, $data) {
 	file_put_contents(__DIR__ . '/log.txt', json_encode(array("date" => date('Y-m-d H:i:s'), "remote_addr" => $_SERVER["REMOTE_ADDR"], "remote_port" => $_SERVER["REMOTE_PORT"], "type" => $type, "data" => $data), JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
