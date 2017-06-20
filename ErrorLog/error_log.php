@@ -33,6 +33,9 @@ if (!empty($backtraces)) {
 }
 
 $fd = fopen(__DIR__ . "/log.txt", "r");
+if ($fd === false) {
+	exit("file log.txt not found");
+}
 fseek($fd, -10000, SEEK_END);
 $lines = array();
 while (!feof($fd)) {
