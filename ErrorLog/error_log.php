@@ -22,7 +22,8 @@ function dotcoo_response() {
 	dotcoo_log("response", ob_get_flush());
 }
 
-if (!empty(debug_backtrace())) {
+$backtraces = debug_backtrace();
+if (!empty($backtraces)) {
 	ob_start();
 	dotcoo_request();
 	set_error_handler('dotcoo_error_handler');
