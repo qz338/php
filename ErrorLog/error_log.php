@@ -37,8 +37,12 @@ if ($fd === false) {
 	exit("file log.txt not found");
 }
 fseek($fd, -10000, SEEK_END);
+fgets($fd);
 $lines = array();
 while (!feof($fd)) {
+	if (count($lines) > 10) {
+		array_shift($lines);
+	}
 	$lines[] = fgets($fd);
 }
 fclose($fd);
@@ -59,7 +63,12 @@ textarea {width:98%}
 var texts = document.getElementsByTagName("textarea");
 for (var i = 0; i < texts.length; i++) {
 	var text = texts[i];
-	var log = JSON.parse(text.value);
+	var log = null;
+	try {
+		log = JSON.parse(text.value);
+	} catch(e) {
+		continue;
+	}
 	if (log.type != "response") {
 		text.value = JSON.stringify(log, null, "\t");
 	} else {
